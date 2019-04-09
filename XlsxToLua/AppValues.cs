@@ -571,6 +571,51 @@ public class AppValues
     public static bool ExportJsonIsExportJsonMapIncludeKeyColumnValue = true;
 
     /// <summary>
+    /// 声明将指定的Excel文件额外导出为csv对应UE_SLUA类文件
+    /// </summary>
+    public const string EXPORT_UE_SLUA_FLAG_STRING = "-exportUESLua";
+
+    /// <summary>
+    /// 声明导出与csv对应UESlua文件的参数
+    /// </summary>
+    public const string EXPORT_UE_SLUA_FLAG_PARAM_STRING = "-exportUESLuaParam";
+
+    /// <summary>
+    /// 导出csv对应UESlua文件参数下属的具体参数，用于配置导出路径
+    /// </summary>
+    public const string EXPORT_UE_SLUA_PARAM_EXPORT_PATH_PARAM_STRING = "exportPath";
+
+    /// <summary>
+    /// 存储本次要额外导出为csv对应UESlua文件的Excel文件名
+    /// </summary>
+    public static List<string> ExportUESluaTableNames = new List<string>();
+
+    /// <summary>
+    /// 导出csv对应UE_SLUA类文件参数下属的具体参数，用于配置引用类库
+    /// </summary>
+    public const string EXPORT_UE_SLUA_PARAM_IMPORT_PARAM_STRING = "import";
+
+    /// <summary>
+    /// 导出csv对应UE_SLUA类文件参数下属的具体参数，用于配置引用类库
+    /// </summary>
+    public const string EXPORT_UE_SLUA_PARAM_API_PARAM_STRING = "cppAPI";
+
+    /// <summary>
+    /// 导出csv对应C++类文件中，class WARFRAMEDEMO_API UWFAudioConfig 中的WARFRAMEDEMO_API字段
+    /// </summary>
+    public static string ExportUESluaExportAPIName = null;
+
+    /// <summary>
+    /// 导出csv对应C++类文件中的引用类库
+    /// </summary>
+    public static List<string> ExportUESluaImport = null;
+
+    /// <summary>
+    /// 导出csv对应UESlua类文件的存储路径
+    /// </summary>
+    public static string ExportUESluaPath = null;
+
+    /// <summary>
     /// 存储运行时打印的所有信息，在程序运行完毕后输出为txt文件，从而解决如果输出内容过多控制台无法显示全部信息的问题
     /// </summary>
     public static StringBuilder LogContent = new StringBuilder();

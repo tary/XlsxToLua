@@ -574,6 +574,27 @@ public class Utils
         }
     }
 
+    public static bool SaveUESluaClassFile(string tableName, string fileName, string content)
+    {
+        try
+        {
+            string exportDirectoryPath = GetExportDirectoryPath(tableName, AppValues.ExportUESluaPath);
+            if (Directory.Exists(exportDirectoryPath) == false)
+                Directory.CreateDirectory(exportDirectoryPath);
+            
+            string savePath = Utils.CombinePath(exportDirectoryPath, fileName);
+            StreamWriter writer = new StreamWriter(savePath, false, new UTF8Encoding(false));
+            writer.Write(content);
+            writer.Flush();
+            writer.Close();
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
     public static bool SaveJsonFile(string tableName, string content)
     {
         try
