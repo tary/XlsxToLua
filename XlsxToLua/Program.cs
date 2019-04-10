@@ -774,7 +774,7 @@ public class Program
                                 {
                                     // 检查导出路径是否存在
                                     if (!Directory.Exists(value))
-                                        Utils.LogErrorAndExit(string.Format("错误：声明的{0}参数下属的参数{1}所配置的导出csv对应Java类文件导出路径不存在", AppValues.EXPORT_JAVA_CLASS_PARAM_PARAM_STRING, AppValues.EXPORT_JAVA_CLASS_PARAM_EXPORT_PATH_PARAM_STRING));
+                                        Utils.LogErrorAndExit(string.Format("错误：声明的{0}参数下属的参数{1}所配置的导出csv对应UESLua文件导出路径不存在", AppValues.EXPORT_UE_SLUA_FLAG_STRING, AppValues.EXPORT_UE_SLUA_PARAM_EXPORT_PATH_PARAM_STRING));
                                     else
                                         AppValues.ExportUESluaPath = Path.GetFullPath(value);
                                 }
@@ -786,7 +786,7 @@ public class Program
                                 {
                                     value = value.Trim();
                                     if (string.IsNullOrEmpty(value))
-                                        Utils.LogWarning(string.Format("警告：声明的{0}参数下属的参数{1}所配置的导出csv对应Java类文件中的引用类库为空，若不想设置引用类库，可以直接不配置此参数，而不是将参数值留空", AppValues.EXPORT_JAVA_CLASS_PARAM_PARAM_STRING, AppValues.EXPORT_JAVA_CLASS_PARAM_IMPORT_PARAM_STRING));
+                                        Utils.LogWarning(string.Format("警告：声明的{0}参数下属的参数{1}所配置的导出csv对应UESlua类文件中的引用类库为空，若不想设置引用类库，可以直接不配置此参数，而不是将参数值留空", AppValues.EXPORT_UE_SLUA_FLAG_STRING, AppValues.EXPORT_UE_SLUA_PARAM_IMPORT_PARAM_STRING));
                                     else
                                     {
                                         // 通过英文逗号分隔各个引用类库
@@ -801,7 +801,7 @@ public class Program
                                             if (exportUESluaPackage.Count > 0)
                                                 AppValues.ExportUESluaImport = exportUESluaPackage;
                                             else
-                                                Utils.LogWarning(string.Format("警告：声明的{0}参数下属的参数{1}所配置的导出csv对应Java类文件中的引用类库均为空，若不想设置引用类库，可以直接不配置此参数，而不是将参数值留空", AppValues.EXPORT_JAVA_CLASS_PARAM_PARAM_STRING, AppValues.EXPORT_JAVA_CLASS_PARAM_PACKAGE_PARAM_STRING));
+                                                Utils.LogWarning(string.Format("警告：声明的{0}参数下属的参数{1}所配置的导出csv对应Java类文件中的引用类库均为空，若不想设置引用类库，可以直接不配置此参数，而不是将参数值留空", AppValues.EXPORT_UE_SLUA_FLAG_STRING, AppValues.EXPORT_UE_SLUA_PARAM_IMPORT_PARAM_STRING));
                                         }
                                     }
                                 }
@@ -835,7 +835,7 @@ public class Program
                 {
                     string[] fileNames = Utils.GetExcelFileNames(param, out errorString);
                     if (errorString != null)
-                        Utils.LogErrorAndExit(string.Format("错误：声明额外导出为csv对应Java类文件的参数{0}后{1}", AppValues.EXPORT_JAVA_CLASS_PARAM_STRING, errorString));
+                        Utils.LogErrorAndExit(string.Format("错误：声明额外导出为csv对应Java类文件的参数{0}后{1}", AppValues.EXPORT_UE_SLUA_FLAG_STRING, errorString));
                     else
                     {
                         // 检查指定导出的Excel文件是否存在
