@@ -616,6 +616,21 @@ public class AppValues
     public static string ExportUESluaPath = null;
 
     /// <summary>
+    /// 导出csv对应UE_SLUA类文件参数下属的具体参数，用于配置引用类库
+    /// </summary>
+    public const string EXPORT_LANG_PATH_PARAM_STRING = "-exportLangPath";
+
+    /// <summary>
+    /// 导出csv对应Lang文件参数下属的具体参数，用于配置引用类库
+    /// </summary>
+    public const string EXPORT_LANG_FILE_NAME = "lang.txt";
+
+    /// <summary>
+    /// 导出csv对应Lang类文件的存储路径
+    /// </summary>
+    public static string ExportLangPath = null;
+
+    /// <summary>
     /// 存储运行时打印的所有信息，在程序运行完毕后输出为txt文件，从而解决如果输出内容过多控制台无法显示全部信息的问题
     /// </summary>
     public static StringBuilder LogContent = new StringBuilder();

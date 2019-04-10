@@ -717,6 +717,23 @@ public class Program
                     }
                 }
             }
+            else if (param.StartsWith(AppValues.EXPORT_LANG_PATH_PARAM_STRING, StringComparison.CurrentCultureIgnoreCase))
+            {
+                string paramString = param.Trim();
+                int leftBracketIndex = paramString.IndexOf('(');
+                int rightBracketIndex = paramString.LastIndexOf(')');
+                if (leftBracketIndex == -1 || rightBracketIndex == -1 || leftBracketIndex > rightBracketIndex)
+                    Utils.LogErrorAndExit(string.Format("错误：声明导出csv对应Lang文件的参数{0}后必须在英文小括号内声明输出路径", AppValues.EXPORT_LANG_PATH_PARAM_STRING));
+                else
+                {
+                    paramString = paramString.Substring(leftBracketIndex + 1, rightBracketIndex - leftBracketIndex - 1);
+          
+                    if (!Directory.Exists(paramString))
+                        Utils.LogErrorAndExit(string.Format("错误：声明的{0}参数下所配置的Lang文件导出路径不存在", AppValues.EXPORT_LANG_PATH_PARAM_STRING));
+                    else
+                        AppValues.ExportLangPath = Path.GetFullPath(paramString);
+                }
+            }
             else if (param.StartsWith(AppValues.EXPORT_UE_SLUA_FLAG_PARAM_STRING, StringComparison.CurrentCultureIgnoreCase))
                 continue;
             else if (param.StartsWith(AppValues.EXPORT_UE_SLUA_FLAG_STRING, StringComparison.CurrentCultureIgnoreCase))
@@ -1141,10 +1158,12 @@ public class Program
         }
         if (isTableAllRight == true)
         {
+            int tableIndex = -1;
             Utils.Log("\n表格检查完毕，没有发现错误，开始导出为lua文件\n");
             // 进行表格导出
             foreach (var item in AppValues.ExportTableNameAndPath)
             {
+                ++tableIndex;
                 string tableName = item.Key;
                 string filePath = item.Value;
                 TableInfo tableInfo = AppValues.TableInfo[tableName];
@@ -1221,6 +1240,16 @@ public class Program
                         Utils.LogErrorAndExit(errorString);
                     else
                         Utils.Log("额外导出为csv对应UESlua文件成功");
+                }
+
+                // 判断是否要额外导出为csv对应Lang文件
+                if (!string.IsNullOrEmpty(AppValues.ExportLangPath))
+                {
+                    TableExportLangHelper.ExportTableLang(tableInfo, tableIndex == 0, out errorString);
+                    if (errorString != null)
+                        Utils.LogErrorAndExit(errorString);
+                    else
+                        Utils.Log(string.Format("额外导出为csv {0} 对应Lang文件成功\n", tableName));
                 }
                 // 判断是否要额外导出为json文件
                 if (AppValues.ExportJsonTableNames.Contains(tableName))

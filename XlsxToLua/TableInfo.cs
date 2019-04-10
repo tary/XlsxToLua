@@ -105,6 +105,7 @@ public class FieldInfo
     // 该字段在表格中的列号（从0计）
     public int ColumnSeq { get; set; }
     // 如果该字段不是集合类型，直接依次存储该字段下的所有行的数据，否则存储每行定义的该集合数据是否有效
+    public List<string> LangDefaultValues { get; set; }
     public List<object> Data { get; set; }
     // 如果该字段为lang型，LangKeys中额外存储所填的所有key名，对应的键值则存储在Data中
     public List<object> LangKeys { get; set; }

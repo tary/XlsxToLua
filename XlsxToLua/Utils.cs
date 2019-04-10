@@ -595,6 +595,27 @@ public class Utils
         }
     }
 
+    public static bool SaveLangFile(string content, bool append)
+    {
+        try
+        {
+            string exportDirectoryPath = AppValues.ExportLangPath;
+            if (Directory.Exists(AppValues.ExportLangPath) == false)
+                Directory.CreateDirectory(AppValues.ExportLangPath);
+
+            string savePath = Utils.CombinePath(AppValues.ExportLangPath, AppValues.EXPORT_LANG_FILE_NAME);
+            StreamWriter writer = new StreamWriter(savePath, append, new UTF8Encoding(false));
+            writer.Write(content);
+            writer.Flush();
+            writer.Close();
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
     public static bool SaveJsonFile(string tableName, string content)
     {
         try

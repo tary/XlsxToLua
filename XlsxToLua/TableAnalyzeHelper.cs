@@ -708,6 +708,7 @@ public class TableAnalyzeHelper
     {
         fieldInfo.LangKeys = new List<object>();
         fieldInfo.Data = new List<object>();
+        fieldInfo.LangDefaultValues = new List<string>();
 
         // 如果是统一指定key名规则，需要解析替换规则
         Dictionary<string, List<object>> replaceInfo = null;
@@ -736,12 +737,14 @@ public class TableAnalyzeHelper
                 continue;
             }
             string inputData = null;
+            string inputLangDefaultVal = null;
             // 未统一指定key名规则的Lang型数据，需在单元格中填写key
             if (replaceInfo == null)
                 inputData = dt.Rows[row][columnIndex].ToString().Trim();
             // 统一指定key名规则的Lang型数据，根据规则生成在Lang文件中的具体key名
             else
             {
+                inputLangDefaultVal = dt.Rows[row][columnIndex].ToString().Trim();
                 inputData = configString;
                 foreach (var item in replaceInfo)
                 {
@@ -750,19 +753,30 @@ public class TableAnalyzeHelper
                 }
             }
 
+
+            string currentLang = null;
             if (string.IsNullOrEmpty(inputData))
             {
                 fieldInfo.LangKeys.Add(string.Empty);
-                fieldInfo.Data.Add(null);
             }
             else
             {
                 fieldInfo.LangKeys.Add(inputData);
                 if (AppValues.LangData.ContainsKey(inputData))
-                    fieldInfo.Data.Add(AppValues.LangData[inputData]);
-                else
-                    fieldInfo.Data.Add(null);
+                    currentLang = AppValues.LangData[inputData];
             }
+
+            fieldInfo.Data.Add(currentLang);
+
+            if(!string.IsNullOrEmpty(currentLang))
+            {
+                inputLangDefaultVal = currentLang;
+            }
+
+            if (string.IsNullOrEmpty(inputLangDefaultVal))
+                fieldInfo.LangDefaultValues.Add(string.Empty);
+            else
+                fieldInfo.LangDefaultValues.Add(inputLangDefaultVal);
         }
 
         errorString = null;
