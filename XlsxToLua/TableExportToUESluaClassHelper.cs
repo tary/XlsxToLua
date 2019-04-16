@@ -9,6 +9,23 @@ public class TableExportToUESluaClassHelper
     public static bool ExportTableToUESluaClass(TableInfo tableInfo, out string errorString)
     {
         List<FieldInfo> allFieldInfo = tableInfo.GetAllClientFieldInfo();
+        if (allFieldInfo.Count == 0)
+        {
+            errorString = "字段为空";
+            return false;
+        }
+
+        string keyType = null;
+        if (allFieldInfo[0].DataType == DataType.Int)
+            keyType = "int32";
+        else if (allFieldInfo[0].DataType == DataType.String)
+            keyType = "const FString&";
+        else
+        {
+            errorString = "主键类型只支持String和Int";
+            return false;
+        }
+
         allFieldInfo.RemoveAt(0);
         string fileName = string.Concat(char.ToUpper(tableInfo.TableName[0]), tableInfo.TableName.Substring(1), "Table");
         string className = null;
@@ -21,16 +38,16 @@ public class TableExportToUESluaClassHelper
         if (string.IsNullOrEmpty(AppValues.ExportCsvClassClassNamePostfix) == false)
             className = className + AppValues.ExportCsvClassClassNamePostfix;
 
-        if (_ExportTableToUESluaHeader(tableInfo, allFieldInfo, className, fileName, out errorString) == false)
+        if (_ExportTableToUESluaHeader(tableInfo, allFieldInfo, keyType, className, fileName, out errorString) == false)
         {
             return false;
         }
 
-        return _ExportTableToUESluaCode(tableInfo, allFieldInfo, className, fileName, out errorString);
+        return _ExportTableToUESluaCode(tableInfo, allFieldInfo, keyType, className, fileName, out errorString);
     }
 
 
-    private static bool _ExportTableToUESluaHeader(TableInfo tableInfo, List<FieldInfo> allFieldInfo, string className, string fileName, out string errorString)
+    private static bool _ExportTableToUESluaHeader(TableInfo tableInfo, List<FieldInfo> allFieldInfo, string keyType, string className, string fileName, out string errorString)
     {
         StringBuilder stringBuilder = new StringBuilder();
         if (AppValues.ExportUESluaExportAPIName == null)
@@ -69,7 +86,7 @@ public class TableExportToUESluaClassHelper
 
         stringBuilder.AppendLine(UFunctionDef);
         stringBuilder.Append(_CPP_CLASS_INDENTATION_STRING);
-        stringBuilder.AppendLine("bool GetTableItem(const FString& Key, UPARAM(ref) FLuaTable& OutVal) const;").AppendLine();
+        stringBuilder.AppendFormat("static bool GetTableItem({0} Key, FLuaTable& OutVal);", keyType).AppendLine().AppendLine();
 
         //bool GetNAME(TYPE& OutVal);
         foreach (FieldInfo fieldInfo in allFieldInfo)
@@ -77,11 +94,11 @@ public class TableExportToUESluaClassHelper
             stringBuilder.AppendLine(UFunctionDef);
 
             stringBuilder.Append(_CPP_CLASS_INDENTATION_STRING);
-            stringBuilder.Append(string.Concat("bool Get", char.ToUpper(fieldInfo.FieldName[0]), fieldInfo.FieldName.Substring(1), "(const FString& Key, UPARAM(ref) "));
-            string typeName = _GetUESluaClassTableStringDataType(fieldInfo.DataType);
-            stringBuilder.Append(_GetUESluaClassTableStringDataType(fieldInfo.DataType));
+            string valTypeName = _GetUESluaClassTableStringDataType(fieldInfo.DataType);
+            string feilName = string.Concat(char.ToUpper(fieldInfo.FieldName[0]), fieldInfo.FieldName.Substring(1));
 
-            stringBuilder.AppendLine("& OutVal) const;").AppendLine();
+            stringBuilder.AppendFormat("static bool Get{0}({1} Key, {2}& OutVal);", feilName, keyType, valTypeName);
+            stringBuilder.AppendLine();
         }
 
         // 闭合类定义
@@ -100,7 +117,7 @@ public class TableExportToUESluaClassHelper
     }
 
 
-    private static bool _ExportTableToUESluaCode(TableInfo tableInfo, List<FieldInfo> allFieldInfo, string className, string fileName, out string errorString)
+    private static bool _ExportTableToUESluaCode(TableInfo tableInfo, List<FieldInfo> allFieldInfo, string keyType, string className, string fileName, out string errorString)
     {
         StringBuilder stringBuilder = new StringBuilder();
 
@@ -111,7 +128,7 @@ public class TableExportToUESluaClassHelper
         ///Functions
         ///
 
-        stringBuilder.AppendFormat("bool {0}::GetTableItem(const FString& Key, FLuaTable& OutVal) const", className).AppendLine();
+        stringBuilder.AppendFormat("bool {0}::GetTableItem({1} Key, FLuaTable& OutVal)", className, keyType).AppendLine();
         stringBuilder.AppendLine("{");
         {
             //mainState->call("GetTableItem", {0}, Key);
@@ -135,11 +152,10 @@ public class TableExportToUESluaClassHelper
         //bool GetNAME(TYPE& OutVal);
         foreach (FieldInfo fieldInfo in allFieldInfo)
         {
-            stringBuilder.AppendFormat("bool {0}::Get{1}{2}(const FString& Key, ", className, char.ToUpper(fieldInfo.FieldName[0]), fieldInfo.FieldName.Substring(1));
-            string typeName = _GetUESluaClassTableStringDataType(fieldInfo.DataType);
-            stringBuilder.Append(_GetUESluaClassTableStringDataType(fieldInfo.DataType));
+            string valTypeName = _GetUESluaClassTableStringDataType(fieldInfo.DataType);
+            string feilName = string.Concat(char.ToUpper(fieldInfo.FieldName[0]), fieldInfo.FieldName.Substring(1));
 
-            stringBuilder.AppendLine("& OutVal) const");
+            stringBuilder.AppendFormat("bool {0}::Get{1}({2} Key, {3}& OutVal)", className, feilName, keyType, valTypeName);
             stringBuilder.AppendLine("{");
             {
                 stringBuilder.Append(_GetIndentation(1));
@@ -165,7 +181,11 @@ public class TableExportToUESluaClassHelper
                     stringBuilder.AppendFormat("if (!ResultLuaVar.{0}()) {{ return false; }}", checkFunc).AppendLine();
 
                     stringBuilder.Append(_GetIndentation(1));
-                    stringBuilder.AppendFormat("OutVal = ResultLuaVar.{0}();", castFunc).AppendLine();
+
+                    if (fieldInfo.DataType == DataType.Lang || fieldInfo.DataType == DataType.String)
+                        stringBuilder.AppendFormat("OutVal = UTF8_TO_TCHAR(ResultLuaVar.{0}());", castFunc).AppendLine();
+                    else
+                        stringBuilder.AppendFormat("OutVal = ResultLuaVar.{0}();", castFunc).AppendLine();
                 }
                 else
                 {
