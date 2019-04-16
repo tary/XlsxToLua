@@ -246,6 +246,11 @@ public class AppValues
     /// 配置文件（配置自定义的检查规则）的文件名
     /// </summary>
     public const string CONFIG_FILE_NAME = "config.txt";
+	
+    /// <summary>
+    /// 导出csv对应xlsx文件的扩展名（不含点号）
+    /// </summary>
+    public static string XLSX_EXTENSION = "xlsx";
 
     // 每张数据表前五行分别声明字段描述、字段变量名、字段数据类型、字段检查规则、导出到数据库中的字段名及类型（行编号从0开始）
     public const int DATA_FIELD_DESC_INDEX = 0;
@@ -254,6 +259,7 @@ public class AppValues
     public const int DATA_FIELD_CHECK_RULE_INDEX = 3;
     public const int DATA_FIELD_EXPORT_DATABASE_FIELD_INFO = 4;
     public const int DATA_FIELD_DATA_START_INDEX = 5;
+    public const int DATA_FIELD_LANG_DATA_START_INDEX = 1;
 
     // 每张配置表中的一列为一个配置参数的声明，其中第一行声明参数名，其余行声明具体参数（行编号从0开始）
     public const int CONFIG_FIELD_DEFINE_INDEX = 0;

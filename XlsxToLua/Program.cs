@@ -88,7 +88,12 @@ public class Program
 
             // 解析lang文件
             string errorString = null;
-            AppValues.LangData = TxtConfigReader.ParseTxtConfigFile(AppValues.LangFilePath, ":", out errorString);
+
+            if (AppValues.LangFilePath.EndsWith("." + AppValues.XLSX_EXTENSION))
+                AppValues.LangData = XlsxLangReader.ParseXlsxConfigFile(AppValues.LangFilePath, out errorString);
+            else
+                AppValues.LangData = TxtConfigReader.ParseTxtConfigFile(AppValues.LangFilePath, ":", out errorString);
+
             if (!string.IsNullOrEmpty(errorString))
                 Utils.LogErrorAndExit(errorString);
         }

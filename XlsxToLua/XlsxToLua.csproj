@@ -46,6 +46,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AppValues.cs" />
+    <Compile Include="LangTableAnalyzeHelper.cs" />
     <Compile Include="MapStringAnalyzeHelper.cs" />
     <Compile Include="MapStringCheckHelper.cs" />
     <Compile Include="MyCheckFunction.cs" />
