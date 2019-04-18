@@ -58,7 +58,7 @@ public class TableExportToUESluaClassHelper
         }
         stringBuilder.AppendLine("//Auto generated code").AppendLine();
         stringBuilder.AppendLine("#pragma once").AppendLine();
-        stringBuilder.AppendLine("#include \"CoreMinimal.h\"");
+        stringBuilder.AppendLine("#include \"LuaTableBase.h\"");
         stringBuilder.AppendLine("#include \"LuaTable.h\"");
         ////////////////////////////////////////////////////////////////
         ///Ext include
@@ -74,7 +74,7 @@ public class TableExportToUESluaClassHelper
         stringBuilder.AppendFormat("#include \"{0}.generated.h\"", fileName).AppendLine().AppendLine().AppendLine();
 
         stringBuilder.AppendLine("UCLASS(Blueprintable)");
-        stringBuilder.AppendFormat("class {0} {1} : public UObject", AppValues.ExportUESluaExportAPIName, className).AppendLine();
+        stringBuilder.AppendFormat("class {0} {1} : public ULuaTableBase", AppValues.ExportUESluaExportAPIName, className).AppendLine();
 
         stringBuilder.AppendLine("{");
         stringBuilder.AppendLine(string.Concat(_CPP_CLASS_INDENTATION_STRING, "GENERATED_UCLASS_BODY()"));
@@ -92,15 +92,10 @@ public class TableExportToUESluaClassHelper
 
         StringBuilder feildBuilder = new StringBuilder();
 
-        feildBuilder.Append(_CPP_CLASS_INDENTATION_STRING).AppendLine(_CPP_CLASS_PROPERTY_STRING);
-        feildBuilder.Append(_CPP_CLASS_INDENTATION_STRING).AppendLine("FLuaTable _Row;");
-
-
         StringBuilder noneStaticFeildBuilder = new StringBuilder();
-
-        noneStaticFeildBuilder.AppendLine(UFunctionDef);
+        
         noneStaticFeildBuilder.Append(_CPP_CLASS_INDENTATION_STRING);
-        noneStaticFeildBuilder.AppendFormat("bool InitializeLoad({0} Key);", keyType).AppendLine();
+        noneStaticFeildBuilder.AppendFormat("virtual bool InitializeLoad({0} Key) override;", keyType).AppendLine().AppendLine();
 
 
         //bool GetNAME(TYPE& OutVal);
@@ -168,6 +163,16 @@ public class TableExportToUESluaClassHelper
         stringBuilder.AppendFormat("#include \"{0}.h\"", fileName).AppendLine();
         stringBuilder.AppendLine("#include \"LuaState.h\"").AppendLine().AppendLine();
 
+        string tableNameNS = string.Concat("LuaTable", tableInfo.TableName);
+
+        stringBuilder.AppendFormat("namespace {0}", tableNameNS).AppendLine();
+        stringBuilder.AppendLine("{");
+        stringBuilder.Append(_CPP_CLASS_INDENTATION_STRING).AppendFormat("static const char* NAME = \"{0}\";", tableInfo.TableName).AppendLine();
+        stringBuilder.AppendLine("}").AppendLine();
+
+        tableNameNS = string.Concat(tableNameNS, "::NAME");
+
+
         //////////////////////////////////////////////////////////
         ///Construct
         stringBuilder.AppendFormat("{0}::{0}(const FObjectInitializer& ObjectInitializer)", className).AppendLine();
@@ -205,44 +210,16 @@ public class TableExportToUESluaClassHelper
         ///
         
         stringBuilder.AppendFormat("bool {0}::InitializeLoad({1} Key)", className, keyType).AppendLine();
-        stringBuilder.Append("{");
+        stringBuilder.AppendLine("{");
         {
-            stringBuilder.Append(_GetIndentation(1));
-            stringBuilder.AppendLine("slua::LuaState* mainState = slua::LuaState::get();");
-            stringBuilder.Append(_GetIndentation(1));
-            stringBuilder.AppendLine("if (!mainState) { return false; }");
-            stringBuilder.Append(_GetIndentation(1));
-            stringBuilder.AppendFormat("slua::LuaVar ResultLuaVar = mainState->call(\"GetTableItem\", \"{0}\", Key);", tableInfo.TableName).AppendLine();
-
-            stringBuilder.Append(_GetIndentation(1));
-            stringBuilder.AppendLine("if (!ResultLuaVar.isValid() || ResultLuaVar.isNil()) { return false; }").AppendLine();
-
-            stringBuilder.Append(_GetIndentation(1)).AppendLine("_Row.Table = ResultLuaVar;");
-
-            stringBuilder.Append(_GetIndentation(1));
-            stringBuilder.AppendLine("return true;");
+            stringBuilder.Append(_GetIndentation(1)).AppendFormat("return initializeLoadTemplate(Key, {0});", tableNameNS).AppendLine();
         }
         stringBuilder.AppendLine("}").AppendLine();
 
         stringBuilder.AppendFormat("bool {0}::GetTableItem({1} Key, FLuaTable& OutVal)", className, keyType).AppendLine();
         stringBuilder.AppendLine("{");
         {
-            //mainState->call("GetTableItem", {0}, Key);
-            stringBuilder.Append(_GetIndentation(1));
-            stringBuilder.AppendLine("slua::LuaState* mainState = slua::LuaState::get();");
-            stringBuilder.Append(_GetIndentation(1));
-            stringBuilder.AppendLine("if (!mainState) { return false; }");
-            stringBuilder.Append(_GetIndentation(1));
-            stringBuilder.AppendFormat("slua::LuaVar ResultLuaVar = mainState->call(\"GetTableItem\", \"{0}\", Key);", tableInfo.TableName).AppendLine();
-
-            stringBuilder.Append(_GetIndentation(1));
-            stringBuilder.AppendLine("if (!ResultLuaVar.isValid() || ResultLuaVar.isNil()) { return false; }").AppendLine();
-
-            stringBuilder.Append(_GetIndentation(1));
-            stringBuilder.AppendLine("OutVal.Table = ResultLuaVar;");
-
-            stringBuilder.Append(_GetIndentation(1));
-            stringBuilder.AppendLine("return true;");
+            stringBuilder.Append(_GetIndentation(1)).AppendFormat("return GetRowTemplate(Key, {0}, OutVal.Table);", tableNameNS).AppendLine();
         }
         stringBuilder.AppendLine("}").AppendLine();
 
@@ -261,12 +238,10 @@ public class TableExportToUESluaClassHelper
 
             noneStaticFeildBuilder.AppendLine("{");
             {
-                noneStaticFeildBuilder.Append(_GetIndentation(1)).AppendLine("if (!_Row.Table.isValid() || _Row.Table.isNil()) return false;");
-
                 if (_IsLocalCache(fieldInfo.DataType))
-                    noneStaticFeildBuilder.Append(_GetIndentation(1)).AppendFormat("return _Row.GetFromTable(\"{0}\", {1});", fieldInfo.FieldName, feildName).AppendLine();
+                    noneStaticFeildBuilder.Append(_GetIndentation(1)).AppendFormat("return loadFieldTemplate(\"{0}\", {1});", fieldInfo.FieldName, feildName).AppendLine();
                 else
-                    noneStaticFeildBuilder.Append(_GetIndentation(1)).AppendFormat("return _Row.GetFromTable(\"{0}\", OutVal);", fieldInfo.FieldName).AppendLine();
+                    noneStaticFeildBuilder.Append(_GetIndentation(1)).AppendFormat("return loadFieldTemplate(\"{0}\", OutVal);", fieldInfo.FieldName).AppendLine();
             }
             noneStaticFeildBuilder.AppendLine("}").AppendLine();
 
@@ -274,15 +249,11 @@ public class TableExportToUESluaClassHelper
             stringBuilder.AppendFormat("bool {0}::Get{1}({2} Key, {3}& OutVal)", className, feildName, keyType, valTypeName);
             stringBuilder.AppendLine("{");
             {
-                stringBuilder.Append(_GetIndentation(1)).AppendLine("slua::LuaState* mainState = slua::LuaState::get();");
-
-                stringBuilder.Append(_GetIndentation(1)).AppendLine("if (!mainState) { return false; }");
-
-                stringBuilder.Append(_GetIndentation(1));
-                stringBuilder.AppendFormat("slua::LuaVar ResultLuaVar = mainState->call(\"GetTableItemField\", \"{0}\", Key, \"{1}\");", fieldInfo.TableName, fieldInfo.FieldName).AppendLine();
-
-                stringBuilder.Append(_GetIndentation(1));
-                stringBuilder.AppendLine("if (!ResultLuaVar.isValid() || ResultLuaVar.isNil()) { return false; }").AppendLine();
+                stringBuilder.Append(_GetIndentation(1)).AppendLine("slua::LuaVar ResultLuaVar;");
+                stringBuilder.Append(_GetIndentation(1)).AppendFormat("if (!GetFieldTemplate(Key, {0}, \"{1}\", ResultLuaVar))", tableNameNS, fieldInfo.FieldName).AppendLine();
+                stringBuilder.Append(_GetIndentation(1)).AppendLine("{");
+                stringBuilder.Append(_GetIndentation(2)).AppendLine("return false;");
+                stringBuilder.Append(_GetIndentation(1)).AppendLine("}");
 
                 string checkFunc = null;
                 string castFunc = null;
