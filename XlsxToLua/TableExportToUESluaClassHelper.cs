@@ -97,6 +97,9 @@ public class TableExportToUESluaClassHelper
         noneStaticFeildBuilder.Append(_CPP_CLASS_INDENTATION_STRING);
         noneStaticFeildBuilder.AppendFormat("virtual bool Initialize({0} Key) override;", keyType).AppendLine().AppendLine();
 
+        noneStaticFeildBuilder.Append(_CPP_CLASS_INDENTATION_STRING);
+        noneStaticFeildBuilder.AppendLine("virtual bool LoadCache() override;").AppendLine();
+
 
         //bool GetNAME(TYPE& OutVal);
         foreach (FieldInfo fieldInfo in allFieldInfo)
@@ -223,7 +226,10 @@ public class TableExportToUESluaClassHelper
         }
         stringBuilder.AppendLine("}").AppendLine();
 
+        //非静态函数
         StringBuilder noneStaticFeildBuilder = new StringBuilder();
+        //LoadCache内逻辑
+        StringBuilder loadFeildBuilder = new StringBuilder();
 
         //bool GetNAME(TYPE& OutVal);
         foreach (FieldInfo fieldInfo in allFieldInfo)
@@ -245,6 +251,13 @@ public class TableExportToUESluaClassHelper
             }
             noneStaticFeildBuilder.AppendLine("}").AppendLine();
 
+            if (_IsLocalCache(fieldInfo.DataType))
+            {
+                loadFeildBuilder.Append(_GetIndentation(1)).AppendFormat("if (!loadFieldNoCheckTemplate(\"{0}\", {1}))", fieldInfo.FieldName, feildName).AppendLine();
+                loadFeildBuilder.Append(_GetIndentation(1)).AppendLine("{");
+                loadFeildBuilder.Append(_GetIndentation(2)).AppendLine("return false;");
+                loadFeildBuilder.Append(_GetIndentation(1)).AppendLine("}").AppendLine();
+            }
 
             stringBuilder.AppendFormat("bool {0}::Get{1}({2} Key, {3}& OutVal)", className, feildName, keyType, valTypeName);
             stringBuilder.AppendLine("{");
@@ -281,8 +294,17 @@ public class TableExportToUESluaClassHelper
             stringBuilder.AppendLine("}").AppendLine();
         }
 
-        stringBuilder.AppendLine().Append(noneStaticFeildBuilder).AppendLine();
-        
+        stringBuilder.AppendLine().Append(noneStaticFeildBuilder);
+
+        stringBuilder.AppendFormat("bool {0}::LoadCache()", className).AppendLine();
+        stringBuilder.AppendLine("{");
+        {
+            stringBuilder.Append(_GetIndentation(1)).AppendLine("if (!_Row.Table.isValid() || _Row.Table.isNil()) return false;").AppendLine();
+            stringBuilder.Append(loadFeildBuilder);
+            stringBuilder.Append(_GetIndentation(1)).AppendLine("return true;");
+        }
+        stringBuilder.AppendLine("}").AppendLine();
+
 
         if (Utils.SaveUESluaClassFile(tableInfo.TableName, fileName + ".cpp", stringBuilder.ToString()) == true)
         {

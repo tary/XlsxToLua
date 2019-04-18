@@ -15,6 +15,11 @@ bool ULuaTableBase::Initialize(int32 Key)
 }
 
 
+bool ULuaTableBase::LoadCache()
+{
+	return false;
+}
+
 bool ULuaTableBase::GetRowTemplate(int32 Key, const char* LuaTableName, slua::LuaVar& OutResultLuaVar)
 {
 	if (nullptr == LuaTableName)

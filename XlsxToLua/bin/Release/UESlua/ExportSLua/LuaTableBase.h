@@ -14,6 +14,8 @@ class WARFRAMEDEMO_API ULuaTableBase : public UObject
 public:
 	UFUNCTION(BlueprintCallable, Category = "Tables")
 	virtual bool Initialize(int32 Key);
+	UFUNCTION(BlueprintCallable, Category = "Tables")
+	virtual bool LoadCache();
 
 	UPROPERTY(BlueprintReadOnly)
 	FLuaTable _Row;
@@ -32,6 +34,12 @@ protected:
 	inline bool loadFieldTemplate(const char* LuaFieldName, R& OutResult) const
 	{
 		if (!_Row.Table.isValid() || _Row.Table.isNil()) return false;
+		return loadFieldNoCheckTemplate(LuaFieldName, OutResult);
+	}
+
+	template<typename R>
+	inline bool loadFieldNoCheckTemplate(const char* LuaFieldName, R& OutResult) const
+	{
 		return _Row.GetFromTable(LuaFieldName, OutResult);
 	}
 };
