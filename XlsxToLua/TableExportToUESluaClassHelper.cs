@@ -95,7 +95,7 @@ public class TableExportToUESluaClassHelper
         StringBuilder noneStaticFeildBuilder = new StringBuilder();
         
         noneStaticFeildBuilder.Append(_CPP_CLASS_INDENTATION_STRING);
-        noneStaticFeildBuilder.AppendFormat("virtual bool InitializeLoad({0} Key) override;", keyType).AppendLine().AppendLine();
+        noneStaticFeildBuilder.AppendFormat("virtual bool Initialize({0} Key) override;", keyType).AppendLine().AppendLine();
 
 
         //bool GetNAME(TYPE& OutVal);
@@ -209,10 +209,10 @@ public class TableExportToUESluaClassHelper
         ///Functions
         ///
         
-        stringBuilder.AppendFormat("bool {0}::InitializeLoad({1} Key)", className, keyType).AppendLine();
+        stringBuilder.AppendFormat("bool {0}::Initialize({1} Key)", className, keyType).AppendLine();
         stringBuilder.AppendLine("{");
         {
-            stringBuilder.Append(_GetIndentation(1)).AppendFormat("return initializeLoadTemplate(Key, {0});", tableNameNS).AppendLine();
+            stringBuilder.Append(_GetIndentation(1)).AppendFormat("return initializeTemplate(Key, {0});", tableNameNS).AppendLine();
         }
         stringBuilder.AppendLine("}").AppendLine();
 

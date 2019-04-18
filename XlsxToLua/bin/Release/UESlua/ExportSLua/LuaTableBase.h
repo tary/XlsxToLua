@@ -13,14 +13,14 @@ class WARFRAMEDEMO_API ULuaTableBase : public UObject
 	GENERATED_UCLASS_BODY()
 public:
 	UFUNCTION(BlueprintCallable, Category = "Tables")
-	virtual bool InitializeLoad(int32 Key);
+	virtual bool Initialize(int32 Key);
 
 	UPROPERTY(BlueprintReadOnly)
 	FLuaTable _Row;
 
 
 protected:
-	inline bool initializeLoadTemplate(int32 Key, const char* LuaTableName)
+	inline bool initializeTemplate(int32 Key, const char* LuaTableName)
 	{
 		return GetRowTemplate(Key, LuaTableName, _Row.Table);
 	}

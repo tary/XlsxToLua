@@ -9,7 +9,7 @@ ULuaTableBase::ULuaTableBase(const FObjectInitializer& ObjectInitializer)
 {
 }
 
-bool ULuaTableBase::InitializeLoad(int32 Key)
+bool ULuaTableBase::Initialize(int32 Key)
 {
 	return false;
 }
