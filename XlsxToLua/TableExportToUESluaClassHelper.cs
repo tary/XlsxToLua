@@ -111,7 +111,7 @@ public class TableExportToUESluaClassHelper
             }
 
             stringBuilder.Append(_CPP_CLASS_INDENTATION_STRING);
-            string valTypeName = _GetUESluaClassTableStringDataType(fieldInfo.DataType);
+            string valTypeName = _GetUECppDataTypeString(fieldInfo.DataType, fieldInfo.JsonDetailType);
             string feildName = string.Concat(char.ToUpper(fieldInfo.FieldName[0]), fieldInfo.FieldName.Substring(1));
 
             stringBuilder.AppendFormat("static bool Get{0}({1} Key, {2}& OutVal);", feildName, keyType, valTypeName);
@@ -122,12 +122,12 @@ public class TableExportToUESluaClassHelper
                 noneStaticFeildBuilder.AppendLine(UFunctionDef);
             }
 
-            if(_IsLocalCache(fieldInfo.DataType))
+            if(_IsLocalCache(fieldInfo.DataType, fieldInfo.JsonDetailType))
                 noneStaticFeildBuilder.Append(_CPP_CLASS_INDENTATION_STRING).AppendFormat("bool Load{0}();", feildName).AppendLine();
             else
                 noneStaticFeildBuilder.Append(_CPP_CLASS_INDENTATION_STRING).AppendFormat("bool Load{0}({1}& OutVal);", feildName, valTypeName).AppendLine();
 
-            if(_IsLocalCache(fieldInfo.DataType))
+            if(_IsLocalCache(fieldInfo.DataType, fieldInfo.JsonDetailType))
             {
                 if (_IsSupportBP(fieldInfo.DataType))
                 {
@@ -158,6 +158,24 @@ public class TableExportToUESluaClassHelper
         }
     }
 
+    //获得构造函数专用的默认值
+    private static string _getDefaultValForCtr(DataType ty)
+    {
+        switch (ty)
+        {
+            case DataType.Int:
+            case DataType.Long:
+                return "0";
+            case DataType.Float:
+                return "0.f";
+            case DataType.Bool:
+                return "false";
+            default:
+                break;
+        }
+
+        return null;
+    }
 
     private static bool _ExportTableToUESluaCode(TableInfo tableInfo, List<FieldInfo> allFieldInfo, string keyType, string className, string fileName, out string errorString)
     {
@@ -182,28 +200,14 @@ public class TableExportToUESluaClassHelper
         stringBuilder.Append(_CPP_CLASS_INDENTATION_STRING).AppendLine(": Super(ObjectInitializer)");
         foreach (FieldInfo fieldInfo in allFieldInfo)
         {
-            string defaultVal = null;
             string feildName = string.Concat(char.ToUpper(fieldInfo.FieldName[0]), fieldInfo.FieldName.Substring(1));
 
-            switch (fieldInfo.DataType)
             {
-                case DataType.Int:
-                case DataType.Long:
-                    defaultVal = "0";
-                    break;
-                case DataType.Float:
-                    defaultVal = "0.f";
-                    break;
-                case DataType.Bool:
-                    defaultVal = "false";
-                    break;
-                default:
-                    break;
-            }
-
-            if (defaultVal != null)
-            {
-                stringBuilder.Append(_CPP_CLASS_INDENTATION_STRING).AppendFormat(", {0}({1})", feildName, defaultVal).AppendLine();
+                string defaultVal = _getDefaultValForCtr(fieldInfo.DataType); ;
+                if (defaultVal != null)
+                {
+                    stringBuilder.Append(_CPP_CLASS_INDENTATION_STRING).AppendFormat(", {0}({1})", feildName, defaultVal).AppendLine();
+                }
             }
         }
         stringBuilder.Append(_CPP_CLASS_INDENTATION_STRING).AppendLine("{ }").AppendLine();
@@ -234,24 +238,24 @@ public class TableExportToUESluaClassHelper
         //bool GetNAME(TYPE& OutVal);
         foreach (FieldInfo fieldInfo in allFieldInfo)
         {
-            string valTypeName = _GetUESluaClassTableStringDataType(fieldInfo.DataType);
+            string valTypeName = _GetUECppDataTypeString(fieldInfo.DataType, fieldInfo.JsonDetailType);
             string feildName = string.Concat(char.ToUpper(fieldInfo.FieldName[0]), fieldInfo.FieldName.Substring(1));
 
-            if (_IsLocalCache(fieldInfo.DataType))
+            if (_IsLocalCache(fieldInfo.DataType, fieldInfo.JsonDetailType))
                 noneStaticFeildBuilder.AppendFormat("bool {0}::Load{1}()", className, feildName).AppendLine();
             else
                 noneStaticFeildBuilder.AppendFormat("bool {0}::Load{1}({2}& OutVal)", className, feildName, valTypeName).AppendLine();
 
             noneStaticFeildBuilder.AppendLine("{");
             {
-                if (_IsLocalCache(fieldInfo.DataType))
+                if (_IsLocalCache(fieldInfo.DataType, fieldInfo.JsonDetailType))
                     noneStaticFeildBuilder.Append(_GetIndentation(1)).AppendFormat("return loadFieldTemplate(\"{0}\", {1});", fieldInfo.FieldName, feildName).AppendLine();
                 else
                     noneStaticFeildBuilder.Append(_GetIndentation(1)).AppendFormat("return loadFieldTemplate(\"{0}\", OutVal);", fieldInfo.FieldName).AppendLine();
             }
             noneStaticFeildBuilder.AppendLine("}").AppendLine();
 
-            if (_IsLocalCache(fieldInfo.DataType))
+            if (_IsLocalCache(fieldInfo.DataType, fieldInfo.JsonDetailType))
             {
                 loadFeildBuilder.Append(_GetIndentation(1)).AppendFormat("if (!loadFieldNoCheckTemplate(\"{0}\", {1}))", fieldInfo.FieldName, feildName).AppendLine();
                 loadFeildBuilder.Append(_GetIndentation(1)).AppendLine("{");
@@ -270,26 +274,40 @@ public class TableExportToUESluaClassHelper
 
                 string checkFunc = null;
                 string castFunc = null;
-                if (_GetUESluaValueFuncString(fieldInfo.DataType, out checkFunc, out castFunc))
+                if (fieldInfo.DataType == DataType.Json && fieldInfo.JsonDetailType != null)
                 {
-                    stringBuilder.Append(_GetIndentation(1));
-                    stringBuilder.AppendFormat("if (!ResultLuaVar.{0}()) {{ return false; }}", checkFunc).AppendLine();
-
-                    stringBuilder.Append(_GetIndentation(1));
-
-                    if (fieldInfo.DataType == DataType.Lang || fieldInfo.DataType == DataType.String)
-                        stringBuilder.AppendFormat("OutVal = UTF8_TO_TCHAR(ResultLuaVar.{0}());", castFunc).AppendLine();
-                    else
-                        stringBuilder.AppendFormat("OutVal = ResultLuaVar.{0}();", castFunc).AppendLine();
+                    stringBuilder.Append(_GetIndentation(1)).AppendLine("return slua::getFromVar(ResultLuaVar, OutVal);");
                 }
                 else
                 {
-                    stringBuilder.Append(_GetIndentation(1));
-                    stringBuilder.AppendLine("OutVal.Table = ResultLuaVar;");
-                }
+                    if (_GetUESluaValueFuncString(fieldInfo.DataType, out checkFunc, out castFunc))
+                    {
+                        stringBuilder.Append(_GetIndentation(1));
+                        stringBuilder.AppendFormat("if (!ResultLuaVar.{0}()) {{ return false; }}", checkFunc).AppendLine();
 
-                stringBuilder.Append(_GetIndentation(1));
-                stringBuilder.AppendLine("return true;");
+                        stringBuilder.Append(_GetIndentation(1));
+
+                        switch (fieldInfo.DataType)
+                        {
+                            case DataType.Lang:
+                            case DataType.String:
+                                stringBuilder.AppendFormat("OutVal = UTF8_TO_TCHAR(ResultLuaVar.{0}());", castFunc).AppendLine();
+                                break;
+                            default:
+                                stringBuilder.AppendFormat("OutVal = ResultLuaVar.{0}();", castFunc).AppendLine();
+                                break;
+                        }
+
+                    }
+                    else
+                    {
+                        stringBuilder.Append(_GetIndentation(1));
+                        stringBuilder.AppendLine("OutVal.Table = ResultLuaVar;");
+                    }
+
+                    stringBuilder.Append(_GetIndentation(1));
+                    stringBuilder.AppendLine("return true;");
+                }
             }
             stringBuilder.AppendLine("}").AppendLine();
         }
@@ -318,7 +336,7 @@ public class TableExportToUESluaClassHelper
         }
     }
 
-    private static bool _IsLocalCache(DataType dataType)
+    private static bool _IsLocalCache(DataType dataType, JsonDetail JsonDetailType)
     {
         switch (dataType)
         {
@@ -329,11 +347,31 @@ public class TableExportToUESluaClassHelper
             case DataType.String:
             case DataType.Lang:
                 return true;
+            case DataType.Json:
+                return JsonDetailType != null;
             default:
                 return false;
         }
     }
-    private static string _GetUESluaClassTableStringDataType(DataType dataType)
+
+    private static string _getUECppJsonTypeString(JsonDetail jsonDetail)
+    {
+        if (null == jsonDetail) return null;
+
+        switch (jsonDetail.ContentType)
+        {
+            case DataType.Array:
+                return string.Concat("TArray<", _GetUECppDataTypeString(jsonDetail.ValueType, null), ">");
+            case DataType.Dict:
+                return string.Concat("TMap<", _GetUECppDataTypeString(jsonDetail.KeyType, null), ", ", _GetUECppDataTypeString(jsonDetail.ValueType, null), ">");
+            default:
+                break;
+        }
+
+        return null;
+    }
+
+    private static string _GetUECppDataTypeString(DataType dataType, JsonDetail JsonDetailType)
     {
         switch (dataType)
         {
@@ -349,9 +387,18 @@ public class TableExportToUESluaClassHelper
                 return "FString";
             case DataType.Lang:
                 return "FString";
+            case DataType.Json:
+                {
+                    string tyStr = _getUECppJsonTypeString(JsonDetailType);
+                    if (tyStr != null)
+                        return tyStr;
+                    break;
+                }                
             default:
-                return "FLuaTable";
+                break;
         }
+
+        return "FLuaTable";
     }
 
     private static bool _IsSupportBP(DataType dataType)
@@ -374,7 +421,7 @@ public class TableExportToUESluaClassHelper
                 castFunc = "asInt";
                 break;
             case DataType.Long:
-                checkFunc = "isInt() && !ResultLuaVar.isNumber";
+                checkFunc = "isInt";
                 castFunc = "asInt64";
                 break;
             case DataType.Float:

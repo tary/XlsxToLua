@@ -81,10 +81,33 @@ public class TableInfo
     }
 }
 
-/// <summary>
-/// 一张表格中一个字段的信息，包含这个字段名称、数据类型、检查规则的定义，以及所有行的数据
-/// </summary>
-public class FieldInfo
+//用Json来表达无限Dict和Array
+public class JsonDetail
+{
+    public JsonDetail(DataType valType)
+    {
+        ContentType = DataType.Array;
+        KeyType = DataType.Invalid;
+        ValueType = valType;
+    }
+
+    public JsonDetail(DataType keyType, DataType valType)
+    {
+        ContentType = DataType.Dict;
+        KeyType = keyType;
+        ValueType = valType;
+    }
+
+    // Json自身数据类型
+    public DataType ContentType { get; }
+    public DataType KeyType { get; }
+    public DataType ValueType { get; }
+}
+
+    /// <summary>
+    /// 一张表格中一个字段的信息，包含这个字段名称、数据类型、检查规则的定义，以及所有行的数据
+    /// </summary>
+    public class FieldInfo
 {
     // 该字段所在表格
     public string TableName { get; set; }
@@ -127,6 +150,7 @@ public class FieldInfo
     public string DatabaseFieldType { get; set; }
     // 是否忽略进行lua、csv、json等客户端方式导出（未填写字段名但填写了数据库导出信息的字段，仅进行数据库导出）
     public bool IsIgnoreClientExport { get; set; }
+    public JsonDetail JsonDetailType { get; set; }
 
     public FieldInfo()
     {

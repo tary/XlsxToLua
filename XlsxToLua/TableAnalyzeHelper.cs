@@ -1325,6 +1325,71 @@ public class TableAnalyzeHelper
         }
     }
 
+    private static JsonDetail _getJsonSubType(string defineString)
+    {
+        if (string.IsNullOrEmpty(defineString) || defineString.Length < 4)
+            return null;
+
+        // 取出配置 去掉json
+        string configString = defineString.Substring(4).Trim();
+        if (string.IsNullOrEmpty(configString))
+        {
+            return null;
+        }
+
+        if (configString.StartsWith("["))
+        {
+            int endPos = configString.LastIndexOf(']');
+            if (endPos <= 0)
+            {
+                return null;
+            }
+            string itemTyString = configString.Substring(1, endPos - 1).Trim();
+            if (string.IsNullOrEmpty(itemTyString))
+            {
+                return null;
+            }
+            
+            DataType innerValueType = _AnalyzeDataType(itemTyString);
+            if (innerValueType != DataType.Int && innerValueType != DataType.String && innerValueType != DataType.Lang)
+                return null;
+
+            return new JsonDetail(innerValueType);
+        }
+
+        if (configString.StartsWith("{"))
+        {
+            int slicePos = configString.IndexOf(':');
+            int endPos = configString.LastIndexOf('}');
+            if (slicePos == -1 || endPos <= 0 || slicePos >= endPos)
+            {
+                return null;
+            }
+
+            string keyTyString = configString.Substring(1, slicePos - 1).Trim();
+            if (string.IsNullOrEmpty(keyTyString))
+            {
+                return null;
+            }
+
+            string valueTyString = configString.Substring(slicePos + 1, endPos - slicePos - 1).Trim();
+            if (string.IsNullOrEmpty(valueTyString))
+            {
+                return null;
+            }
+            
+            DataType keyValueType = _AnalyzeDataType(keyTyString);
+            if (keyValueType != DataType.Int && keyValueType != DataType.String)
+                return null;
+            DataType valValueType = _AnalyzeDataType(valueTyString);
+            if (valValueType != DataType.Int && valValueType != DataType.String && valValueType != DataType.Lang)
+                return null;
+            return new JsonDetail(keyValueType, valValueType);
+        }
+
+        return null;        
+    }
+
     /// <summary>
     /// 解析json型数据的定义，将json通过LitJson库解析出来
     /// </summary>
@@ -1333,6 +1398,12 @@ public class TableAnalyzeHelper
         StringBuilder errorStringBuilder = new StringBuilder();
         fieldInfo.Data = new List<object>();
         fieldInfo.JsonString = new List<string>();
+
+        if (!fieldInfo.DataTypeString.Equals("json", StringComparison.CurrentCultureIgnoreCase))
+        {
+            fieldInfo.JsonDetailType = _getJsonSubType(fieldInfo.DataTypeString);
+        }
+
         for (int row = AppValues.DATA_FIELD_DATA_START_INDEX; row < dt.Rows.Count; ++row)
         {
             // 如果本行该字段的父元素标记为无效则该数据也标为无效
@@ -1356,6 +1427,18 @@ public class TableAnalyzeHelper
                     {
                         JsonData jsonData = JsonMapper.ToObject(inputData);
                         fieldInfo.Data.Add(jsonData);
+
+                        if (null != fieldInfo.JsonDetailType)
+                        {
+                            if (fieldInfo.JsonDetailType.ContentType == DataType.Array && !jsonData.IsArray)
+                            {
+                                errorStringBuilder.AppendFormat("第{0}行所填json字符串（{1}）非法，原因为：定义为Array,所填数据的类型不匹配\n", row + AppValues.DATA_FIELD_DATA_START_INDEX + 1, inputData);
+                            }
+                            else if(fieldInfo.JsonDetailType.ContentType == DataType.Dict && !jsonData.IsObject)
+                            {
+                                errorStringBuilder.AppendFormat("第{0}行所填json字符串（{1}）非法，原因为：定义为Dict, 所填数据的类型不匹配\n", row + AppValues.DATA_FIELD_DATA_START_INDEX + 1, inputData);
+                            }
+                        }
                     }
                     catch (JsonException exception)
                     {
