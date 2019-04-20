@@ -364,6 +364,39 @@ public class TableExportToLuaHelper
         }
     }
 
+    public static bool ExportLangTableToLua(Dictionary<string, string> LangData, out string errorString)
+    {
+        StringBuilder content = new StringBuilder();
+
+        // 生成数据内容开头
+        content.AppendLine("return {");
+
+        // 当前缩进量
+        int currentLevel = 1;
+
+        foreach (var pair in LangData)
+        {
+            string key = pair.Key;
+            string value = pair.Value;
+            content.Append(_GetLuaTableIndentation(currentLevel));
+            content.AppendFormat("[\"{0}\"] = \"{1}\",", key, value).AppendLine();
+        }
+        // 生成数据内容结尾
+        content.AppendLine("}");
+        string exportString = content.ToString();
+        // 保存为lua文件
+        if (Utils.SaveLuaFile("", "lang", exportString) == true)
+        {
+            errorString = null;
+            return true;
+        }
+        else
+        {
+            errorString = "保存lang lua文件失败\n";
+            return false;
+        }
+    }
+
     /// <summary>
     /// 按指定索引方式导出数据时,通过此函数递归生成层次结构,当递归到最内层时输出指定table value中的数据
     /// </summary>

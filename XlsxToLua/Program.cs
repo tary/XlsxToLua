@@ -1295,6 +1295,16 @@ public class Program
             errorLevel = -1;
         }
 
+        {
+            string errorString = null;
+            TableExportToLuaHelper.ExportLangTableToLua(AppValues.LangData, out errorString);
+            if (errorString != null)
+                Utils.LogErrorAndExit(errorString);
+            else
+                Utils.Log("导出lang.lua成功");
+        }
+        
+
         Utils.Log("\n导出完毕", ConsoleColor.Green);
         Console.ReadKey();
         return errorLevel;
