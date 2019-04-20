@@ -774,12 +774,12 @@ public class TableExportToLuaHelper
         else
         {
             StringBuilder content = new StringBuilder();
-            _AnalyzeJsonData(content, jsonData, level);
+            _AnalyzeJsonData(content, jsonData, fieldInfo.JsonDetailType, level);
             return content.ToString();
         }
     }
 
-    private static void _AnalyzeJsonData(StringBuilder content, JsonData jsonData, int level)
+    private static void _AnalyzeJsonData(StringBuilder content, JsonData jsonData, JsonDetail jsonDetail, int level)
     {
         if (jsonData == null)
         {
@@ -800,12 +800,17 @@ public class TableExportToLuaHelper
                 string keyName = childKeyNames[i];
                 double temp;
                 if (double.TryParse(keyName, out temp) == true)
-                    content.AppendFormat("[\"{0}\"]", keyName);
+                {
+                    if(jsonDetail!= null && jsonDetail.KeyType == DataType.Int)
+                        content.AppendFormat("[{0}]", keyName);
+                    else
+                        content.AppendFormat("[\"{0}\"]", keyName);
+                }
                 else
                     content.Append(childKeyNames[i]);
 
                 content.Append(" = ");
-                _AnalyzeJsonData(content, jsonData[i], level);
+                _AnalyzeJsonData(content, jsonData[i], jsonDetail, level);
                 content.AppendLine(",");
             }
 
@@ -823,7 +828,7 @@ public class TableExportToLuaHelper
             {
                 content.Append(_GetLuaTableIndentation(level));
                 content.AppendFormat("[{0}] = ", i + 1);
-                _AnalyzeJsonData(content, jsonData[i], level);
+                _AnalyzeJsonData(content, jsonData[i], jsonDetail, level);
                 content.AppendLine(",");
             }
 
@@ -853,7 +858,7 @@ public class TableExportToLuaHelper
         else
         {
             StringBuilder content = new StringBuilder();
-            _AnalyzeJsonData(content, jsonData, level);
+            _AnalyzeJsonData(content, jsonData, fieldInfo.JsonDetailType, level);
             return content.ToString();
         }
     }
