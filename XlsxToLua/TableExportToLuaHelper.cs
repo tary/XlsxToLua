@@ -559,6 +559,17 @@ public class TableExportToLuaHelper
         // 一个字段结尾加逗号并换行
         content.AppendLine(",");
 
+        if (fieldInfo.DataType == DataType.Lang)
+        {
+            content.Append(_GetLuaTableIndentation(level));
+            // 变量名
+            content.AppendFormat("{0}{1}", AppValues.LUA_LANG_ID_PREFIX, fieldInfo.FieldName);
+            content.Append(" = ");
+            content.Append(_GetLangIDValue(fieldInfo, row, level));
+            // 一个字段结尾加逗号并换行
+            content.AppendLine(",");
+        }
+
         return content.ToString();
     }
 
@@ -589,6 +600,27 @@ public class TableExportToLuaHelper
             return "true";
         else
             return "false";
+    }
+
+    private static string _GetLangIDValue(FieldInfo fieldInfo, int row, int level)
+    {
+        StringBuilder content = new StringBuilder();
+
+        if (fieldInfo.LangKeys[row] != null)
+        {
+            content.Append("\"");
+            content.Append(fieldInfo.LangKeys[row].ToString().Replace("\n", "\\n").Replace("\"", "\\\""));
+            content.Append("\"");
+        }
+        else
+        {
+            if (AppValues.IsPrintEmptyStringWhenLangNotMatching == true)
+                content.Append("\"\"");
+            else
+                content.Append("nil");
+        }
+
+        return content.ToString();
     }
 
     private static string _GetLangValue(FieldInfo fieldInfo, int row, int level)

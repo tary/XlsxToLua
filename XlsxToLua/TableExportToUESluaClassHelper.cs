@@ -98,7 +98,7 @@ public class TableExportToUESluaClassHelper
         noneStaticFeildBuilder.AppendFormat("virtual bool Initialize({0} Key) override;", keyType).AppendLine().AppendLine();
 
         noneStaticFeildBuilder.Append(_CPP_CLASS_INDENTATION_STRING);
-        noneStaticFeildBuilder.AppendLine("virtual bool LoadCache() override;").AppendLine();
+        noneStaticFeildBuilder.AppendLine("virtual bool LoadCache(ULangStringManager* langMgr) override;").AppendLine();
 
 
         //bool GetNAME(TYPE& OutVal);
@@ -112,9 +112,12 @@ public class TableExportToUESluaClassHelper
 
             stringBuilder.Append(_CPP_CLASS_INDENTATION_STRING);
             string valTypeName = _GetUECppDataTypeString(fieldInfo.DataType, fieldInfo.JsonDetailType);
-            string feildName = string.Concat(char.ToUpper(fieldInfo.FieldName[0]), fieldInfo.FieldName.Substring(1));
+            string fieldName = string.Concat(char.ToUpper(fieldInfo.FieldName[0]), fieldInfo.FieldName.Substring(1));
 
-            stringBuilder.AppendFormat("static bool Get{0}({1} Key, {2}& OutVal);", feildName, keyType, valTypeName);
+            if (fieldInfo.DataType == DataType.Lang)
+                stringBuilder.AppendFormat("static bool Get{0}LangID({1} Key, FString& OutVal);", fieldName, keyType);
+            else
+                stringBuilder.AppendFormat("static bool Get{0}({1} Key, {2}& OutVal);", fieldName, keyType, valTypeName);
             stringBuilder.AppendLine();
 
             if (_IsSupportBP(fieldInfo.DataType))
@@ -123,9 +126,9 @@ public class TableExportToUESluaClassHelper
             }
 
             if(_IsLocalCache(fieldInfo.DataType, fieldInfo.JsonDetailType))
-                noneStaticFeildBuilder.Append(_CPP_CLASS_INDENTATION_STRING).AppendFormat("bool Load{0}();", feildName).AppendLine();
+                noneStaticFeildBuilder.Append(_CPP_CLASS_INDENTATION_STRING).AppendFormat("bool Load{0}(ULangStringManager* langMgr);", fieldName).AppendLine();
             else
-                noneStaticFeildBuilder.Append(_CPP_CLASS_INDENTATION_STRING).AppendFormat("bool Load{0}({1}& OutVal);", feildName, valTypeName).AppendLine();
+                noneStaticFeildBuilder.Append(_CPP_CLASS_INDENTATION_STRING).AppendFormat("bool Load{0}(ULangStringManager* langMgr, {1}& OutVal);", fieldName, valTypeName).AppendLine();
 
             if(_IsLocalCache(fieldInfo.DataType, fieldInfo.JsonDetailType))
             {
@@ -133,7 +136,7 @@ public class TableExportToUESluaClassHelper
                 {
                     feildBuilder.Append(_CPP_CLASS_INDENTATION_STRING).AppendLine(_CPP_CLASS_PROPERTY_STRING);
                 }
-                feildBuilder.Append(_CPP_CLASS_INDENTATION_STRING).AppendFormat("{0} {1};", valTypeName, feildName).AppendLine();
+                feildBuilder.Append(_CPP_CLASS_INDENTATION_STRING).AppendFormat("{0} {1};", valTypeName, fieldName).AppendLine();
             }        
         }
 
@@ -240,30 +243,44 @@ public class TableExportToUESluaClassHelper
         {
             string valTypeName = _GetUECppDataTypeString(fieldInfo.DataType, fieldInfo.JsonDetailType);
             string feildName = string.Concat(char.ToUpper(fieldInfo.FieldName[0]), fieldInfo.FieldName.Substring(1));
+            string luaFieldName = (fieldInfo.DataType == DataType.Lang) ? string.Concat(AppValues.LUA_LANG_ID_PREFIX, fieldInfo.FieldName) : fieldInfo.FieldName;
 
             if (_IsLocalCache(fieldInfo.DataType, fieldInfo.JsonDetailType))
-                noneStaticFeildBuilder.AppendFormat("bool {0}::Load{1}()", className, feildName).AppendLine();
+                noneStaticFeildBuilder.AppendFormat("bool {0}::Load{1}(ULangStringManager* langMgr)", className, feildName).AppendLine();
             else
-                noneStaticFeildBuilder.AppendFormat("bool {0}::Load{1}({2}& OutVal)", className, feildName, valTypeName).AppendLine();
+                noneStaticFeildBuilder.AppendFormat("bool {0}::Load{1}(ULangStringManager* langMgr, {2}& OutVal)", className, feildName, valTypeName).AppendLine();
 
             noneStaticFeildBuilder.AppendLine("{");
             {
                 if (_IsLocalCache(fieldInfo.DataType, fieldInfo.JsonDetailType))
-                    noneStaticFeildBuilder.Append(_GetIndentation(1)).AppendFormat("return loadFieldTemplate(\"{0}\", {1});", fieldInfo.FieldName, feildName).AppendLine();
+                {
+                    if (fieldInfo.DataType == DataType.Lang)
+                        noneStaticFeildBuilder.Append(_GetIndentation(1)).AppendFormat("return loadLangField(\"{0}\", langMgr, {1});", luaFieldName, feildName).AppendLine();
+                    else
+                        noneStaticFeildBuilder.Append(_GetIndentation(1)).AppendFormat("return loadFieldTemplate(\"{0}\", {1});", luaFieldName, feildName).AppendLine();
+                }
                 else
-                    noneStaticFeildBuilder.Append(_GetIndentation(1)).AppendFormat("return loadFieldTemplate(\"{0}\", OutVal);", fieldInfo.FieldName).AppendLine();
+                    noneStaticFeildBuilder.Append(_GetIndentation(1)).AppendFormat("return loadFieldTemplate(\"{0}\", OutVal);", luaFieldName).AppendLine();
             }
             noneStaticFeildBuilder.AppendLine("}").AppendLine();
 
             if (_IsLocalCache(fieldInfo.DataType, fieldInfo.JsonDetailType))
             {
-                loadFeildBuilder.Append(_GetIndentation(1)).AppendFormat("if (!loadFieldNoCheckTemplate(\"{0}\", {1}))", fieldInfo.FieldName, feildName).AppendLine();
+                if (fieldInfo.DataType == DataType.Lang)
+                    loadFeildBuilder.Append(_GetIndentation(1)).AppendFormat("if (!loadLangFieldNoCheck(\"{0}\", langMgr, {1}))", luaFieldName, feildName).AppendLine();
+                else
+                    loadFeildBuilder.Append(_GetIndentation(1)).AppendFormat("if (!loadFieldNoCheckTemplate(\"{0}\", {1}))", luaFieldName, feildName).AppendLine();
+
                 loadFeildBuilder.Append(_GetIndentation(1)).AppendLine("{");
                 loadFeildBuilder.Append(_GetIndentation(2)).AppendLine("return false;");
                 loadFeildBuilder.Append(_GetIndentation(1)).AppendLine("}").AppendLine();
             }
 
-            stringBuilder.AppendFormat("bool {0}::Get{1}({2} Key, {3}& OutVal)", className, feildName, keyType, valTypeName);
+
+            if(fieldInfo.DataType == DataType.Lang)
+                stringBuilder.AppendFormat("bool {0}::Get{1}LangID({2} Key, FString& OutVal)", className, feildName, keyType);
+            else
+                stringBuilder.AppendFormat("bool {0}::Get{1}({2} Key, {3}& OutVal)", className, feildName, keyType, valTypeName);
             stringBuilder.AppendLine("{");
             {
                 stringBuilder.Append(_GetIndentation(1)).AppendLine("slua::LuaVar ResultLuaVar;");
@@ -314,7 +331,7 @@ public class TableExportToUESluaClassHelper
 
         stringBuilder.AppendLine().Append(noneStaticFeildBuilder);
 
-        stringBuilder.AppendFormat("bool {0}::LoadCache()", className).AppendLine();
+        stringBuilder.AppendFormat("bool {0}::LoadCache(ULangStringManager* langMgr)", className).AppendLine();
         stringBuilder.AppendLine("{");
         {
             stringBuilder.Append(_GetIndentation(1)).AppendLine("if (!_Row.Table.isValid() || _Row.Table.isNil()) return false;").AppendLine();
@@ -386,7 +403,7 @@ public class TableExportToUESluaClassHelper
             case DataType.String:
                 return "FString";
             case DataType.Lang:
-                return "FString";
+                return "FText";
             case DataType.Json:
                 {
                     string tyStr = _getUECppJsonTypeString(JsonDetailType);

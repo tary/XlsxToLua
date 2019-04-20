@@ -321,6 +321,8 @@ public class AppValues
     // 导出数据到MySQL中的date型字段的默认格式
     public const string APP_DEFAULT_ONLY_DATE_FORMAT = "yyyy-MM-dd";
 
+    public const string LUA_LANG_ID_PREFIX = "LANG_ID_";
+
     /// <summary>
     /// 本工具所在目录，不能用System.Environment.CurrentDirectory因为当本工具被其他程序调用时取得的CurrentDirectory将是调用者的路径
     /// </summary>

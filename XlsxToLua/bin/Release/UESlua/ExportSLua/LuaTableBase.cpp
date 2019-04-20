@@ -4,6 +4,18 @@
 const char* LUA_GET_TABLE_FUNC = "GetTableItem";
 const char* LUA_GET_TABLE_FIELD_FUNC = "GetTableItemField";
 
+bool ULangStringManager::GetLangString(const FString& Key, FString& OutValue)
+{
+	OutValue = Key;
+	return true;
+}
+
+bool ULangStringManager::GetLangString(const FString& Key, FText& OutValue)
+{
+	OutValue.FromString(Key);
+	return true;
+}
+
 ULuaTableBase::ULuaTableBase(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
@@ -15,7 +27,7 @@ bool ULuaTableBase::Initialize(int32 Key)
 }
 
 
-bool ULuaTableBase::LoadCache()
+bool ULuaTableBase::LoadCache(ULangStringManager* langMgr)
 {
 	return false;
 }
@@ -49,7 +61,7 @@ bool ULuaTableBase::GetFieldTemplate(int32 Key, const char* LuaTableName, const 
 	{
 		return false;
 	}
-
+	
 	OutResultLuaVar = mainState->call(LUA_GET_TABLE_FIELD_FUNC, LuaTableName, Key, LuaFieldName);
 	return (OutResultLuaVar.isValid() && !OutResultLuaVar.isNil());
 }

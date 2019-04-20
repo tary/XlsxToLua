@@ -6,6 +6,21 @@
 #include "LuaTable.h"
 #include "LuaTableBase.generated.h"
 
+class IFLangStringManager
+{
+public:
+	virtual bool GetLangString(const FString& Key, FString& OutValue) = 0;
+};
+
+UCLASS(Abstract)
+class WARFRAMEDEMO_API ULangStringManager : public UObject
+{
+	GENERATED_BODY()
+public:
+	virtual bool GetLangString(const FString& Key, FString& OutValue);
+	virtual bool GetLangString(const FString& Key, FText& OutValue);
+};
+
 
 UCLASS(Abstract)
 class WARFRAMEDEMO_API ULuaTableBase : public UObject
@@ -15,7 +30,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Tables")
 	virtual bool Initialize(int32 Key);
 	UFUNCTION(BlueprintCallable, Category = "Tables")
-	virtual bool LoadCache();
+	virtual bool LoadCache(ULangStringManager* langMgr);
 
 	UPROPERTY(BlueprintReadOnly)
 	FLuaTable _Row;
@@ -41,5 +56,22 @@ protected:
 	inline bool loadFieldNoCheckTemplate(const char* LuaFieldName, R& OutResult) const
 	{
 		return _Row.GetFromTable(LuaFieldName, OutResult);
+	}
+
+	inline bool loadLangField(const char* LuaFieldName, ULangStringManager* langMgr, FText& OutResult) const
+	{
+		if (!_Row.Table.isValid() || _Row.Table.isNil()) return false;
+		return loadLangFieldNoCheck(LuaFieldName, langMgr, OutResult);
+	}
+
+	inline bool loadLangFieldNoCheck(const char* LuaFieldName, ULangStringManager* langMgr, FText& OutResult) const
+	{
+		FString OutID;
+		if (_Row.GetFromTable(LuaFieldName, OutID))
+		{
+			return langMgr->GetLangString(OutID, OutResult);
+		}
+
+		return false;
 	}
 };
