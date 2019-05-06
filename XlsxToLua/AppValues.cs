@@ -588,6 +588,7 @@ public class AppValues
     /// </summary>
     public const string EXPORT_UE_SLUA_FLAG_PARAM_STRING = "-exportUESLuaParam";
 
+
     /// <summary>
     /// 导出csv对应UESlua文件参数下属的具体参数，用于配置导出路径
     /// </summary>
@@ -597,6 +598,26 @@ public class AppValues
     /// 存储本次要额外导出为csv对应UESlua文件的Excel文件名
     /// </summary>
     public static List<string> ExportUESluaTableNames = new List<string>();
+    
+    /// <summary>
+    /// 声明将指定的Excel文件额外导出为csv对应UE_SLUA类文件
+    /// </summary>
+    public const string EXPORT_GO_FLAG_STRING = "-exportGo";
+
+    /// <summary>
+    /// 声明导出与csv对应UESlua文件的参数
+    /// </summary>
+    public const string EXPORT_GO_FLAG_PARAM_STRING = "-exportGoParam";
+
+    /// <summary>
+    /// 导出csv对应UESlua文件参数下属的具体参数，用于配置导出路径
+    /// </summary>
+    public const string EXPORT_GO_PARAM_EXPORT_PATH_PARAM_STRING = "exportGoPath";
+
+    /// <summary>
+    /// 存储本次要额外导出为csv对应UESlua文件的Excel文件名
+    /// </summary>
+    public static List<string> ExportGoTableNames = new List<string>();
 
     /// <summary>
     /// 导出csv对应UE_SLUA类文件参数下属的具体参数，用于配置引用类库
@@ -622,6 +643,11 @@ public class AppValues
     /// 导出csv对应UESlua类文件的存储路径
     /// </summary>
     public static string ExportUESluaPath = null;
+
+    /// <summary>
+    /// 导出csv对应Go类文件的存储路径
+    /// </summary>
+    public static string ExportGoPath = null;
 
     /// <summary>
     /// 导出csv对应UE_SLUA类文件参数下属的具体参数，用于配置引用类库
