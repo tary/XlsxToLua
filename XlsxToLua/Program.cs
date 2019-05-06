@@ -854,6 +854,91 @@ public class Program
                     }
                 }
             }
+            else if (param.StartsWith(AppValues.EXPORT_GO_FLAG_PARAM_STRING, StringComparison.CurrentCultureIgnoreCase))
+                continue;
+            else if (param.StartsWith(AppValues.EXPORT_GO_FLAG_STRING, StringComparison.CurrentCultureIgnoreCase))
+            {
+                // 首先解析并判断配置的csv对应Java类文件导出参数是否正确
+                string exportGoParamString = null;
+                for (int j = 4; j < args.Length; ++j)
+                {
+                    string tempParam = args[j];
+                    if (tempParam.StartsWith(AppValues.EXPORT_GO_FLAG_PARAM_STRING, StringComparison.CurrentCultureIgnoreCase))
+                    {
+                        exportGoParamString = tempParam;
+                        break;
+                    }
+                }
+                if (exportGoParamString != null)
+                {
+                    int leftBracketIndex = exportGoParamString.IndexOf('(');
+                    int rightBracketIndex = exportGoParamString.LastIndexOf(')');
+                    if (leftBracketIndex == -1 || rightBracketIndex == -1 || leftBracketIndex > rightBracketIndex)
+                        Utils.LogErrorAndExit(string.Format("错误：声明导出csv对应Go类文件的参数{0}后必须在英文小括号内声明各个具体参数", AppValues.EXPORT_GO_FLAG_PARAM_STRING));
+                    else
+                    {
+                        string paramString = exportGoParamString.Substring(leftBracketIndex + 1, rightBracketIndex - leftBracketIndex - 1);
+                        // 通过|分隔各个参数
+                        string[] paramStringList = paramString.Split(new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries);
+                        // 解析各个具体参数
+                        foreach (string oneParamString in paramStringList)
+                        {
+                            string[] keyAndValue = oneParamString.Split(new char[] { '=' });
+                            if (keyAndValue.Length != 2)
+                                Utils.LogErrorAndExit(string.Format("声明的{0}参数下属的参数字符串{1}错误，参数名和配置值之间应用=分隔", AppValues.EXPORT_GO_FLAG_PARAM_STRING, oneParamString));
+                            else
+                            {
+                                string key = keyAndValue[0].Trim();
+                                string value = keyAndValue[1];
+                                if (AppValues.EXPORT_GO_PARAM_EXPORT_PATH_PARAM_STRING.Equals(key, StringComparison.CurrentCultureIgnoreCase))
+                                {
+                                    // 检查导出路径是否存在
+                                    if (!Directory.Exists(value))
+                                        Utils.LogErrorAndExit(string.Format("错误：声明的{0}参数下属的参数{1}所配置的导出csv对应Go文件导出路径不存在", AppValues.EXPORT_GO_FLAG_STRING, AppValues.EXPORT_GO_PARAM_EXPORT_PATH_PARAM_STRING));
+                                    else
+                                        AppValues.ExportGoPath = Path.GetFullPath(value);
+                                }
+                                else
+                                    Utils.LogErrorAndExit(string.Format("错误：声明的{0}参数下属的参数{1}非法", AppValues.EXPORT_GO_FLAG_PARAM_STRING, key));
+                            }
+                        }
+                        // 要求必须含有exportPath参数
+                        if (AppValues.ExportGoPath == null)
+                            Utils.LogErrorAndExit(string.Format("错误：声明要额外导出csv对应Go类文件，就必须同时在{0}参数下声明用于配置导出路径的参数{1}", AppValues.EXPORT_GO_FLAG_PARAM_STRING, AppValues.EXPORT_GO_PARAM_EXPORT_PATH_PARAM_STRING));
+                    }
+                }
+                else
+                    Utils.LogErrorAndExit(string.Format("错误：声明要额外导出指定Excel文件为csv对应Go类文件，就必须同时声明用于配置Java类文件导出参数的{0}", AppValues.EXPORT_GO_FLAG_PARAM_STRING));
+
+                // 解析配置的要额外导出csv对应Java类文件的Excel文件名
+                string errorString = null;
+                // 先判断是否声明对所有文件进行导出
+                int paramLeftBracketIndex = param.IndexOf('(');
+                int paramRightBracketIndex = param.LastIndexOf(')');
+                if (paramLeftBracketIndex == -1 || paramRightBracketIndex == -1 || paramLeftBracketIndex > paramRightBracketIndex)
+                    Utils.LogErrorAndExit(string.Format("必须在英文小括号内声明要导出为csv对应Go类文件的Excel表格名，若要全部导出，请配置为{0}参数", AppValues.EXPORT_ALL_TO_EXTRA_FILE_PARAM_STRING));
+
+                string exportUESluaClassFileWithoutBracket = param.Substring(paramLeftBracketIndex + 1, paramRightBracketIndex - paramLeftBracketIndex - 1).Trim();
+                if (exportUESluaClassFileWithoutBracket.Equals(AppValues.EXPORT_ALL_TO_EXTRA_FILE_PARAM_STRING, StringComparison.CurrentCultureIgnoreCase))
+                    AppValues.ExportGoTableNames = existExcelFileNames;
+                else
+                {
+                    string[] fileNames = Utils.GetExcelFileNames(param, out errorString);
+                    if (errorString != null)
+                        Utils.LogErrorAndExit(string.Format("错误：声明额外导出为csv对应Go类文件的参数{0}后{1}", AppValues.EXPORT_GO_FLAG_STRING, errorString));
+                    else
+                    {
+                        // 检查指定导出的Excel文件是否存在
+                        foreach (string fileName in fileNames)
+                        {
+                            if (!existExcelFileNames.Contains(fileName))
+                                Utils.LogErrorAndExit(string.Format("要求额外导出为csv对应Go文件的Excel表（{0}）不存在，请检查后重试并注意区分大小写", Utils.CombinePath(AppValues.ExportUESluaPath, string.Concat(fileName, ".xlsx"))));
+                            else
+                                AppValues.ExportGoTableNames.Add(fileName);
+                        }
+                    }
+                }
+            }
             // 注意：-exportJson与-exportJsonParam均以-exportJson开头，故要先判断-exportJsonParam分支。这里将-exportJsonParam的解析放到-exportJson的解析之中是为了只有声明了进行json文件导出时才解析导出参数
             else if (param.StartsWith(AppValues.EXPORT_JSON_PARAM_PARAM_STRING, StringComparison.CurrentCultureIgnoreCase))
                 continue;
@@ -1245,6 +1330,15 @@ public class Program
                         Utils.LogErrorAndExit(errorString);
                     else
                         Utils.Log("额外导出为csv对应UESlua文件成功");
+                }
+                // 判断是否要额外导出为csv对应Go文件
+                if (AppValues.ExportGoTableNames.Contains(tableName))
+                {
+                    TableExportToGoClassHelper.ExportTableToGoClass(tableInfo, out errorString);
+                    if (errorString != null)
+                        Utils.LogErrorAndExit(errorString);
+                    else
+                        Utils.Log("额外导出为csv对应Go文件成功");
                 }
 
                 // 判断是否要额外导出为csv对应Lang文件

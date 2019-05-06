@@ -595,6 +595,27 @@ public class Utils
         }
     }
 
+    public static bool SaveGoClassFile(string tableName, string fileName, string content)
+    {
+        try
+        {
+            string exportDirectoryPath = GetExportDirectoryPath(tableName, AppValues.ExportGoPath);
+            if (Directory.Exists(exportDirectoryPath) == false)
+                Directory.CreateDirectory(exportDirectoryPath);
+
+            string savePath = Utils.CombinePath(exportDirectoryPath, fileName);
+            StreamWriter writer = new StreamWriter(savePath, false, new UTF8Encoding(false));
+            writer.Write(content);
+            writer.Flush();
+            writer.Close();
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
     public static bool SaveLangFile(string content, bool append)
     {
         try
