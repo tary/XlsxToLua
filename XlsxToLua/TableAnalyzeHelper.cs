@@ -667,17 +667,36 @@ public class TableAnalyzeHelper
 
     private static bool _AnalyzeStringType(FieldInfo fieldInfo, TableInfo tableInfo, DataTable dt, int columnIndex, FieldInfo parentField, out int nextFieldColumnIndex, out string errorString)
     {
-        // 检查string型字段数据格式声明是否正确
-        if (!"string(trim)".Equals(fieldInfo.DataTypeString) && !"string".Equals(fieldInfo.DataTypeString))
+        fieldInfo.StringExtentTy = StringExtentType.Invalid;
+
+        // 取出配置 去掉string
+        string configString = fieldInfo.DataTypeString.Substring(6).Trim();
+        if (!string.IsNullOrEmpty(configString) && !"(trim)".Equals(configString, StringComparison.CurrentCultureIgnoreCase))
         {
-            errorString = string.Format("错误：string型字段定义非法，若要自动去除输入字符串的首尾空白字符请将数据类型声明为\"string(trim)\"，否则声明为\"string\"，而你输入的为\"{0}\"", fieldInfo.DataTypeString);
-            nextFieldColumnIndex = columnIndex + 1;
-            return false;
+            if (configString.StartsWith("(") && configString.EndsWith(")"))
+            {
+                configString = configString.Substring(1, configString.Length - 2);
+            }
+
+            if ("Texture2D".Equals(configString, StringComparison.CurrentCultureIgnoreCase))
+            {
+                fieldInfo.StringExtentTy = StringExtentType.Texture2D;
+            }
+            else if ("Name".Equals(configString, StringComparison.CurrentCultureIgnoreCase))
+            {
+                fieldInfo.StringExtentTy = StringExtentType.Name;
+            }
+            else
+            {
+                errorString = string.Format("错误：string型字段定义非法，若要自动去除输入字符串的首尾空白字符请将数据类型声明为\"string(trim/Texture2D/Name)\"，否则声明为\"string\"，而你输入的为\"{0}\"", configString);
+                nextFieldColumnIndex = columnIndex + 1;
+                return false;
+            }
         }
 
         fieldInfo.Data = new List<object>();
 
-        if ("string(trim)".Equals(fieldInfo.DataTypeString, StringComparison.CurrentCultureIgnoreCase))
+        if ("string(trim)".Equals(fieldInfo.DataTypeString, StringComparison.CurrentCultureIgnoreCase) || fieldInfo.StringExtentTy != StringExtentType.Invalid)
         {
             for (int row = AppValues.DATA_FIELD_DATA_START_INDEX; row < dt.Rows.Count; ++row)
             {

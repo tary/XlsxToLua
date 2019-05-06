@@ -115,6 +115,7 @@ public class JsonDetail
     public string FieldName { get; set; }
     // 字段数据类型
     public DataType DataType { get; set; }
+    public StringExtentType StringExtentTy { get; set; }
     // 声明字段数据类型的字符串
     public string DataTypeString { get; set; }
     // array类型的子元素的数据类型
@@ -206,6 +207,16 @@ public enum DataType
     Array,
     Dict,
     MapString,
+}
+
+
+public enum StringExtentType
+{
+    Invalid,
+    Texture2D,
+    UserWidget,
+    Color,
+    Name,
 }
 
 /// <summary>
