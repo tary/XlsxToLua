@@ -26,7 +26,7 @@ public class TableExportToGoClassHelper
             return false;
         }
 
-        allFieldInfo.RemoveAt(0);
+        //allFieldInfo.RemoveAt(0);
         string fileName = string.Concat(char.ToUpper(tableInfo.TableName[0]), tableInfo.TableName.Substring(1));
         string className = null;
         // 若统一配置了前缀和后缀，需进行添加（但注意如果配置了前缀，上面生成的驼峰式类名首字母要改为大写）
@@ -46,11 +46,11 @@ public class TableExportToGoClassHelper
     {
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.AppendLine("package excel").AppendLine();
-        stringBuilder.AppendLine("import (").AppendLine();
-        stringBuilder.AppendLine("\"encoding//json\"");
-        stringBuilder.AppendLine("\"io//ioutil\"");
-        stringBuilder.AppendLine("\"sync\"");
-        stringBuilder.AppendLine("\"log \"github.com//cihub/seellog\"\"");
+        stringBuilder.Append("import (").AppendLine();
+        stringBuilder.Append(_GO_CLASS_INDENTATION_STRING).Append("\"encoding/json\"").AppendLine();
+        stringBuilder.Append(_GO_CLASS_INDENTATION_STRING).Append("\"io/ioutil\"").AppendLine();
+        stringBuilder.Append(_GO_CLASS_INDENTATION_STRING).Append("\"sync\"").AppendLine().AppendLine();
+        stringBuilder.Append(_GO_CLASS_INDENTATION_STRING).Append("log \"github.com/cihub/seelog\"").AppendLine();
         stringBuilder.AppendLine(")").AppendLine();
         ////////////////////////////////////////////////////////////////
 
@@ -69,8 +69,7 @@ public class TableExportToGoClassHelper
                 feildBuilder.Append(_GO_CLASS_INDENTATION_STRING).AppendFormat("{0} {1};", fieldName, valTypeName).AppendLine();
             }
         }
-
-        stringBuilder.AppendLine();
+        
         stringBuilder.Append(feildBuilder);
 
         // 闭合类定义
@@ -90,18 +89,18 @@ public class TableExportToGoClassHelper
 
         stringBuilder.Append(_GO_CLASS_INDENTATION_STRING).AppendFormat("data, err := ioutil.ReadFile(\"../res/excel/{0}.json\")", fileName).AppendLine();
         stringBuilder.Append(_GO_CLASS_INDENTATION_STRING).AppendFormat("if err != nil {{").AppendLine();
-        stringBuilder.Append(_GO_CLASS_INDENTATION_STRING).AppendFormat("log.Error(\"ReadFile err: \", err)").AppendLine();
+        stringBuilder.Append(_GO_CLASS_INDENTATION_STRING).Append(_GO_CLASS_INDENTATION_STRING).AppendFormat("log.Error(\"ReadFile err: \", err)").AppendLine();
         stringBuilder.Append(_GO_CLASS_INDENTATION_STRING).AppendLine("}").AppendLine();
 
         stringBuilder.Append(_GO_CLASS_INDENTATION_STRING).AppendFormat("err = json.Unmarshal(data, &{0})", fileName).AppendLine();
         stringBuilder.Append(_GO_CLASS_INDENTATION_STRING).AppendFormat("if err != nil {{").AppendLine();
-        stringBuilder.Append(_GO_CLASS_INDENTATION_STRING).AppendFormat("log.Error(\"Unmarshal err: \", err)").AppendLine();
+        stringBuilder.Append(_GO_CLASS_INDENTATION_STRING).Append(_GO_CLASS_INDENTATION_STRING).AppendFormat("log.Error(\"Unmarshal err: \", err)").AppendLine();
         stringBuilder.Append(_GO_CLASS_INDENTATION_STRING).AppendLine("}").AppendLine();
 
         stringBuilder.AppendLine("}").AppendLine();
 
         ///////////////////////////////////////////////////////////////
-        stringBuilder.AppendFormat("func Get{0}Map() map[{0}]{1} {{", keyType, className).AppendLine();
+        stringBuilder.AppendFormat("func Get{0}Map() map[{1}]{2} {{",fileName, keyType, className).AppendLine();
         stringBuilder.Append(_GO_CLASS_INDENTATION_STRING).AppendFormat("return {0}", fileName).AppendLine();
         stringBuilder.AppendLine("}").AppendLine();
 
