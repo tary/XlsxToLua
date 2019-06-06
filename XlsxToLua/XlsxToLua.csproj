@@ -57,6 +57,7 @@
     <Compile Include="TableExportLangHelper.cs" />
     <Compile Include="TableExportToCsClassHelper.cs" />
     <Compile Include="TableExportToCsvHelper.cs" />
+    <Compile Include="TableExportToGoClassHelper.cs" />
     <Compile Include="TableExportToJavaClassHelper.cs" />
     <Compile Include="TableExportToJsonHelper.cs" />
     <Compile Include="TableExportToMySQLHelper.cs" />
