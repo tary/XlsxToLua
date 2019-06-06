@@ -224,17 +224,6 @@ public class TableExportToUESluaClassHelper
             string feildName = string.Concat(char.ToUpper(fieldInfo.FieldName[0]), fieldInfo.FieldName.Substring(1));
             string luaFieldName = (fieldInfo.DataType == DataType.Lang) ? string.Concat(AppValues.LUA_LANG_ID_PREFIX, fieldInfo.FieldName) : fieldInfo.FieldName;
 
-            if (!_IsLocalCache(fieldInfo))
-            {
-                noneStaticFeildBuilder.AppendFormat("bool {0}::Load{1}(ULangStringManager* langMgr, {2}& OutVal)", className, feildName, valTypeName).AppendLine();
-
-                noneStaticFeildBuilder.AppendLine("{");
-                {
-                    noneStaticFeildBuilder.Append(_GetIndentation(1)).AppendFormat("return loadFieldTemplate(\"{0}\", OutVal);", luaFieldName).AppendLine();
-                }
-                noneStaticFeildBuilder.AppendLine("}").AppendLine();
-            }
-
             if (_IsLocalCache(fieldInfo))
             {
                 if (fieldInfo.DataType == DataType.Lang)
