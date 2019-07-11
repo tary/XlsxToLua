@@ -178,7 +178,7 @@ public class TableExportToGoClassHelper
             case DataType.Long:
                 return "int64";
             case DataType.Float:
-                return "float";
+                return "float32";
             case DataType.Bool:
                 return "bool";
             case DataType.String:
