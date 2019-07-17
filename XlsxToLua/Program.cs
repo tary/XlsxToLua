@@ -74,7 +74,7 @@ public class Program
             Utils.LogErrorAndExit(string.Format("错误：请检查输入的Client路径是否正确{0}", args[2]));
 
         // 检查第4个参数（lang文件路径）是否正确
-        if (args.Length < 4)
+        if (args.Length < 5)
             Utils.LogErrorAndExit("错误：未输入lang文件路径或未声明不含lang文件（使用-noLang）");
         if (AppValues.NO_LANG_PARAM_STRING.Equals(args[3], StringComparison.CurrentCultureIgnoreCase))
         {
@@ -90,7 +90,10 @@ public class Program
             string errorString = null;
 
             if (AppValues.LangFilePath.EndsWith("." + AppValues.XLSX_EXTENSION))
-                AppValues.LangData = XlsxLangReader.ParseXlsxConfigFile(AppValues.LangFilePath, out errorString);
+            {
+                string langName = (args.Length >= 4) ? args[4] : "default";
+                AppValues.LangData = XlsxLangReader.ParseXlsxConfigFile(AppValues.LangFilePath, langName, out errorString);
+            }
             else
                 AppValues.LangData = TxtConfigReader.ParseTxtConfigFile(AppValues.LangFilePath, ":", out errorString);
 
@@ -100,10 +103,12 @@ public class Program
         else
             Utils.LogErrorAndExit(string.Format("错误：输入的lang文件不存在，路径为{0}", args[3]));
 
+        int ParamStartIndex = (AppValues.LangFilePath == null) ? 4 : 5;
+
         // 生成Excel文件夹中所有表格文件信息
         List<string> existExcelFileNames = new List<string>();
         // 先判断是否指定要导出Excel文件夹下属子文件夹中的Excel文件，若要导出还需要确保不同文件夹下的Excel文件也不允许同名
-        for (int i = 4; i < args.Length; ++i)
+        for (int i = ParamStartIndex; i < args.Length; ++i)
         {
             string tempParam = args[i];
             if (tempParam.Equals(AppValues.EXPORT_INCLUDE_SUBFOLDER_PARAM_STRING, StringComparison.CurrentCultureIgnoreCase))
@@ -178,7 +183,7 @@ public class Program
         bool isExportPart = false;
 
         // 检查其他参数
-        for (int i = 4; i < args.Length; ++i)
+        for (int i = ParamStartIndex; i < args.Length; ++i)
         {
             string param = args[i];
 
@@ -320,7 +325,7 @@ public class Program
             {
                 // 首先解析并判断配置的csv文件导出参数是否正确
                 string exportCsvParamString = null;
-                for (int j = 4; j < args.Length; ++j)
+                for (int j = ParamStartIndex; j < args.Length; ++j)
                 {
                     string tempParam = args[j];
                     if (tempParam.StartsWith(AppValues.EXPORT_CSV_PARAM_PARAM_STRING, StringComparison.CurrentCultureIgnoreCase))
@@ -464,7 +469,7 @@ public class Program
             {
                 // 首先解析并判断配置的csv对应C#类文件导出参数是否正确
                 string exportCsClassParamString = null;
-                for (int j = 4; j < args.Length; ++j)
+                for (int j = ParamStartIndex; j < args.Length; ++j)
                 {
                     string tempParam = args[j];
                     if (tempParam.StartsWith(AppValues.EXPORT_CS_CLASS_PARAM_PARAM_STRING, StringComparison.CurrentCultureIgnoreCase))
@@ -581,7 +586,7 @@ public class Program
             {
                 // 首先解析并判断配置的csv对应Java类文件导出参数是否正确
                 string exportJavaClassParamString = null;
-                for (int j = 4; j < args.Length; ++j)
+                for (int j = ParamStartIndex; j < args.Length; ++j)
                 {
                     string tempParam = args[j];
                     if (tempParam.StartsWith(AppValues.EXPORT_JAVA_CLASS_PARAM_PARAM_STRING, StringComparison.CurrentCultureIgnoreCase))
@@ -745,7 +750,7 @@ public class Program
             {
                 // 首先解析并判断配置的csv对应Java类文件导出参数是否正确
                 string exportUESluaParamString = null;
-                for (int j = 4; j < args.Length; ++j)
+                for (int j = ParamStartIndex; j < args.Length; ++j)
                 {
                     string tempParam = args[j];
                     if (tempParam.StartsWith(AppValues.EXPORT_UE_SLUA_FLAG_PARAM_STRING, StringComparison.CurrentCultureIgnoreCase))
@@ -860,7 +865,7 @@ public class Program
             {
                 // 首先解析并判断配置的csv对应Java类文件导出参数是否正确
                 string exportGoParamString = null;
-                for (int j = 4; j < args.Length; ++j)
+                for (int j = ParamStartIndex; j < args.Length; ++j)
                 {
                     string tempParam = args[j];
                     if (tempParam.StartsWith(AppValues.EXPORT_GO_FLAG_PARAM_STRING, StringComparison.CurrentCultureIgnoreCase))
@@ -946,7 +951,7 @@ public class Program
             {
                 // 首先解析并判断配置的json文件导出参数是否正确
                 string exportJsonParamString = null;
-                for (int j = 4; j < args.Length; ++j)
+                for (int j = ParamStartIndex; j < args.Length; ++j)
                 {
                     string tempParam = args[j];
                     if (tempParam.StartsWith(AppValues.EXPORT_JSON_PARAM_PARAM_STRING, StringComparison.CurrentCultureIgnoreCase))
@@ -1425,7 +1430,6 @@ public class Program
         
 
         Utils.Log("\n导出完毕", ConsoleColor.Green);
-        Console.ReadKey();
         return errorLevel;
     }
 

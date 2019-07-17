@@ -3,10 +3,9 @@ using System.Collections.Generic;
 using System.Data;
 using System.IO;
 using System.Text;
-
 public class XlsxLangReader
 {
-    public static Dictionary<string, string> ParseXlsxConfigFile(string filePath, out string errorString)
+    public static Dictionary<string, string> ParseXlsxConfigFile(string filePath, string sheetName, out string errorString)
     {
         if (!File.Exists(filePath))
         {
@@ -22,7 +21,12 @@ public class XlsxLangReader
             return null;
         }
 
-        DataTable dt = ds.Tables[0];
+        DataTable dt = ds.Tables[sheetName+"$"];
+        if (dt == null)
+        {
+            errorString = "国际表内不含制定名称的工作表:"+ sheetName;
+            return null;
+        }
 
         if (dt.Rows.Count <= AppValues.DATA_FIELD_LANG_DATA_START_INDEX)
         {
