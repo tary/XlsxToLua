@@ -449,6 +449,11 @@ public class AppValues
     public static Dictionary<string, string> ExportTableNameAndPath = new Dictionary<string, string>();
 
     /// <summary>
+    /// 存储本次要导出的Excel文件名对应的文件所在路径（key：表名， value：文件名）
+    /// </summary>
+    public static Dictionary<string, string> ExportTableNameAndFileName = new Dictionary<string, string>();
+
+    /// <summary>
     /// 存储本次忽略导出的Excel文件名
     /// </summary>
     public static List<string> ExceptExportTableNames = new List<string>();

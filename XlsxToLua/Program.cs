@@ -759,7 +759,7 @@ public class Program
                     int leftBracketIndex = exportUESluaParamString.IndexOf('(');
                     int rightBracketIndex = exportUESluaParamString.LastIndexOf(')');
                     if (leftBracketIndex == -1 || rightBracketIndex == -1 || leftBracketIndex > rightBracketIndex)
-                        Utils.LogErrorAndExit(string.Format("错误：声明导出csv对应Java类文件的参数{0}后必须在英文小括号内声明各个具体参数", AppValues.EXPORT_UE_SLUA_FLAG_PARAM_STRING));
+                        Utils.LogErrorAndExit(string.Format("错误：声明导出csv对应UEC++类文件的参数{0}后必须在英文小括号内声明各个具体参数", AppValues.EXPORT_UE_SLUA_FLAG_PARAM_STRING));
                     else
                     {
                         string paramString = exportUESluaParamString.Substring(leftBracketIndex + 1, rightBracketIndex - leftBracketIndex - 1);
@@ -1205,21 +1205,44 @@ public class Program
             Utils.Log(string.Format("成功，耗时：{0}毫秒", stopwatch.ElapsedMilliseconds));
             if (string.IsNullOrEmpty(errorString))
             {
-                TableInfo tableInfo = TableAnalyzeHelper.AnalyzeTable(ds.Tables[AppValues.EXCEL_DATA_SHEET_NAME], fileName, out errorString);
-                if (errorString != null)
-                    Utils.LogErrorAndExit(string.Format("错误：解析{0}失败\n{1}", filePath, errorString));
-                else
+                Dictionary<string, List<string>> tableConfig = null;
+
+                do
                 {
                     // 如果有表格配置进行解析
                     if (ds.Tables[AppValues.EXCEL_CONFIG_SHEET_NAME] != null)
                     {
-                        tableInfo.TableConfig = TableAnalyzeHelper.GetTableConfig(ds.Tables[AppValues.EXCEL_CONFIG_SHEET_NAME], out errorString);
+                        tableConfig = TableAnalyzeHelper.GetTableConfig(ds.Tables[AppValues.EXCEL_CONFIG_SHEET_NAME], out errorString);
                         if (!string.IsNullOrEmpty(errorString))
+                        {
                             Utils.LogErrorAndExit(string.Format("错误：解析表格{0}的配置失败\n{1}", fileName, errorString));
+                            break;
+                        }
                     }
 
-                    AppValues.TableInfo.Add(tableInfo.TableName, tableInfo);
-                }
+                    foreach (DataTable tb in ds.Tables)
+                    {
+                        if (AppValues.EXCEL_DATA_SHEET_NAME.Equals(tb.TableName, StringComparison.CurrentCultureIgnoreCase))
+                        {
+                            if (!analyzeTable(ref tableConfig, tb, fileName, out errorString))
+                                Utils.LogErrorAndExit(string.Format("错误：解析{0}失败\n{1}", filePath, errorString));
+                            continue;
+                        }
+
+                        if (AppValues.EXCEL_CONFIG_SHEET_NAME.Equals(tb.TableName, StringComparison.CurrentCultureIgnoreCase))
+                            continue;
+
+                        string tableName = tb.TableName.Replace("$", "");
+                        if (!analyzeTable(ref tableConfig, tb, tableName, out errorString))
+                        {
+                            Utils.LogErrorAndExit(string.Format("错误：解析{0}失败\n{1}", filePath, errorString));
+                            break;
+                        }
+                        AppValues.ExportTableNameAndPath.Add(tableName, filePath);
+                        AppValues.ExportTableNameAndFileName.Add(tableName, fileName);
+                    }
+
+                } while (false);
             }
             else
                 Utils.LogErrorAndExit(string.Format("错误：读取{0}失败\n{1}", filePath, errorString));
@@ -1251,11 +1274,12 @@ public class Program
             int tableIndex = -1;
             Utils.Log("\n表格检查完毕，没有发现错误，开始导出为lua文件\n");
             // 进行表格导出
-            foreach (var item in AppValues.ExportTableNameAndPath)
+            foreach (var item in AppValues.ExportTableNameAndFileName)
             {
                 ++tableIndex;
                 string tableName = item.Key;
-                string filePath = item.Value;
+                string fileName = item.Value;
+
                 TableInfo tableInfo = AppValues.TableInfo[tableName];
                 string errorString = null;
                 Utils.Log(string.Format("导出表格\"{0}\"：", tableInfo.TableName), ConsoleColor.Green);
@@ -1314,7 +1338,7 @@ public class Program
                         Utils.Log("额外导出为csv对应C#类文件成功");
                 }
                 // 判断是否要额外导出为csv对应Java类文件
-                if (AppValues.ExportJavaClassTableNames.Contains(tableName))
+                if (AppValues.ExportJavaClassTableNames.Contains(fileName))
                 {
                     TableExportToJavaClassHelper.ExportTableToJavaClass(tableInfo, out errorString);
                     if (errorString != null)
@@ -1323,7 +1347,7 @@ public class Program
                         Utils.Log("额外导出为csv对应Java类文件成功");
                 }
                 // 判断是否要额外导出为csv对应UESlua文件
-                if (AppValues.ExportUESluaTableNames.Contains(tableName))
+                if (AppValues.ExportUESluaTableNames.Contains(fileName))
                 {
                     TableExportToUESluaClassHelper.ExportTableToUESluaClass(tableInfo, out errorString);
                     if (errorString != null)
@@ -1332,7 +1356,7 @@ public class Program
                         Utils.Log("额外导出为csv对应UESlua文件成功");
                 }
                 // 判断是否要额外导出为csv对应Go文件
-                if (AppValues.ExportGoTableNames.Contains(tableName))
+                if (AppValues.ExportGoTableNames.Contains(fileName))
                 {
                     TableExportToGoClassHelper.ExportTableToGoClass(tableInfo, out errorString);
                     if (errorString != null)
@@ -1351,7 +1375,7 @@ public class Program
                         Utils.Log(string.Format("额外导出为csv {0} 对应Lang文件成功\n", tableName));
                 }
                 // 判断是否要额外导出为json文件
-                if (AppValues.ExportJsonTableNames.Contains(tableName))
+                if (AppValues.ExportJsonTableNames.Contains(fileName))
                 {
                     TableExportToJsonHelper.ExportTableToJson(tableInfo, out errorString);
                     if (errorString != null)
@@ -1403,4 +1427,23 @@ public class Program
         Console.ReadKey();
         return errorLevel;
     }
+
+    private static bool analyzeTable(ref Dictionary<string, List<string>> tableConfig, DataTable dataTable, string name, out string errorString)
+    {
+        TableInfo tableInfo = TableAnalyzeHelper.AnalyzeTable(dataTable, name, out errorString);
+        if (errorString != null)
+        {
+            return false;
+        }
+
+        if (tableConfig != null)
+        {
+            tableInfo.TableConfig = tableConfig;
+        }
+        AppValues.TableInfo.Add(tableInfo.TableName, tableInfo);
+
+        errorString = null;
+        return true;
+    }
+
 }

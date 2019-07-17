@@ -43,37 +43,47 @@ public class XlsxReader
             // 可选配置表
             bool isFoundConfigSheet = false;
 
+            ds = new DataSet();
+
             for (int i = 0; i < dtSheet.Rows.Count; ++i)
             {
                 string sheetName = dtSheet.Rows[i]["TABLE_NAME"].ToString();
 
-                if (sheetName == AppValues.EXCEL_DATA_SHEET_NAME)
-                    isFoundDateSheet = true;
-                else if (sheetName == AppValues.EXCEL_CONFIG_SHEET_NAME)
+                if (sheetName == AppValues.EXCEL_CONFIG_SHEET_NAME)
+                {
                     isFoundConfigSheet = true;
+                    continue;
+                }
+
+                isFoundDateSheet = true;
+
+                if (da != null)
+                    da.Dispose();
+
+                // 初始化适配器
+                da = new OleDbDataAdapter();
+                da.SelectCommand = new OleDbCommand(String.Format("Select * FROM [{0}]", sheetName), conn);
+
+                da.Fill(ds, sheetName);
+
+                // 删除表格末尾的空行
+                DataRowCollection rows = ds.Tables[sheetName].Rows;
+                int rowCount = rows.Count;
+                for (int rowIdx = rowCount - 1; rowIdx >= AppValues.DATA_FIELD_DATA_START_INDEX; --rowIdx)
+                {
+                    if (string.IsNullOrEmpty(rows[rowIdx][0].ToString()))
+                        rows.RemoveAt(rowIdx);
+                    else
+                        break;
+                }
             }
+
+            isFoundDateSheet = dtSheet.Rows.Count > (isFoundConfigSheet ? 1 : 0);
+
             if (!isFoundDateSheet)
             {
                 errorString = string.Format("错误：{0}中不含有Sheet名为{1}的数据表", filePath, AppValues.EXCEL_DATA_SHEET_NAME.Replace("$", ""));
                 return null;
-            }
-
-            // 初始化适配器
-            da = new OleDbDataAdapter();
-            da.SelectCommand = new OleDbCommand(String.Format("Select * FROM [{0}]", AppValues.EXCEL_DATA_SHEET_NAME), conn);
-
-            ds = new DataSet();
-            da.Fill(ds, AppValues.EXCEL_DATA_SHEET_NAME);
-
-            // 删除表格末尾的空行
-            DataRowCollection rows = ds.Tables[AppValues.EXCEL_DATA_SHEET_NAME].Rows;
-            int rowCount = rows.Count;
-            for (int i = rowCount - 1; i >= AppValues.DATA_FIELD_DATA_START_INDEX; --i)
-            {
-                if (string.IsNullOrEmpty(rows[i][0].ToString()))
-                    rows.RemoveAt(i);
-                else
-                    break;
             }
 
             if (isFoundConfigSheet == true)
