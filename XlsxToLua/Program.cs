@@ -1226,6 +1226,7 @@ public class Program
                         {
                             if (!analyzeTable(ref tableConfig, tb, fileName, out errorString))
                                 Utils.LogErrorAndExit(string.Format("错误：解析{0}失败\n{1}", filePath, errorString));
+                            AppValues.ExportTableNameAndFileName.Add(fileName, fileName);
                             continue;
                         }
 
