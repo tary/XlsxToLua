@@ -3,3 +3,4 @@
 *.csproj.user
 XlsxToLua/obj/
 *.pdb
+*.exe
