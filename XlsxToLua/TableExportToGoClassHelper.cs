@@ -66,7 +66,7 @@ public class TableExportToGoClassHelper
 
             if (_IsLocalCache(fieldInfo.DataType, fieldInfo.JsonDetailType))
             {
-                feildBuilder.Append(_GO_CLASS_INDENTATION_STRING).AppendFormat("{0} {1};", fieldName, valTypeName).AppendLine();
+                feildBuilder.Append(_GO_CLASS_INDENTATION_STRING).AppendFormat("{0} {1}", fieldName, valTypeName).AppendLine();
             }
         }
         
@@ -78,7 +78,7 @@ public class TableExportToGoClassHelper
 
         // 定义相关接口函数
         string LockName = string.Concat(fileName, "Lock");
-        stringBuilder.AppendFormat("var {0} map[{1}]{2}", fileName, keyType, className).AppendLine();
+        stringBuilder.AppendFormat("var {0} map[{1}]*{2}", fileName, keyType, className).AppendLine();
         stringBuilder.AppendFormat("var {0} sync.RWMutex", LockName).AppendLine().AppendLine();
 
 
@@ -100,13 +100,13 @@ public class TableExportToGoClassHelper
         stringBuilder.AppendLine("}").AppendLine();
 
         ///////////////////////////////////////////////////////////////
-        stringBuilder.AppendFormat("func Get{0}Map() map[{1}]{2} {{",fileName, keyType, className).AppendLine();
+        stringBuilder.AppendFormat("func Get{0}Map() map[{1}]*{2} {{",fileName, keyType, className).AppendLine();
         stringBuilder.Append(_GO_CLASS_INDENTATION_STRING).AppendFormat("return {0}", fileName).AppendLine();
         stringBuilder.AppendLine("}").AppendLine();
 
 
         ///////////////////////////////////////////////////////////////
-        stringBuilder.AppendFormat("func Get{0}(key {1}) ({2}, bool) {{", fileName, keyType, className).AppendLine();
+        stringBuilder.AppendFormat("func Get{0}(key {1}) (*{2}, bool) {{", fileName, keyType, className).AppendLine();
         stringBuilder.Append(_GO_CLASS_INDENTATION_STRING).AppendFormat("{0}.RLock()", LockName).AppendLine();
         stringBuilder.Append(_GO_CLASS_INDENTATION_STRING).AppendFormat("defer {0}.RUnlock()", LockName).AppendLine().AppendLine();
 
