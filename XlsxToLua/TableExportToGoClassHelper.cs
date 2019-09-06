@@ -89,12 +89,12 @@ public class TableExportToGoClassHelper
 
         stringBuilder.Append(_GO_CLASS_INDENTATION_STRING).AppendFormat("data, err := ioutil.ReadFile(\"../res/excel/{0}.json\")", fileName).AppendLine();
         stringBuilder.Append(_GO_CLASS_INDENTATION_STRING).AppendFormat("if err != nil {{").AppendLine();
-        stringBuilder.Append(_GO_CLASS_INDENTATION_STRING).Append(_GO_CLASS_INDENTATION_STRING).AppendFormat("log.Error(\"ReadFile err: \", err)").AppendLine();
+        stringBuilder.Append(_GO_CLASS_INDENTATION_STRING).Append(_GO_CLASS_INDENTATION_STRING).AppendFormat("log.Error(\"ReadFile {0} err: \", err)", fileName).AppendLine();
         stringBuilder.Append(_GO_CLASS_INDENTATION_STRING).AppendLine("}").AppendLine();
 
         stringBuilder.Append(_GO_CLASS_INDENTATION_STRING).AppendFormat("err = json.Unmarshal(data, &{0})", fileName).AppendLine();
         stringBuilder.Append(_GO_CLASS_INDENTATION_STRING).AppendFormat("if err != nil {{").AppendLine();
-        stringBuilder.Append(_GO_CLASS_INDENTATION_STRING).Append(_GO_CLASS_INDENTATION_STRING).AppendFormat("log.Error(\"Unmarshal err: \", err)").AppendLine();
+        stringBuilder.Append(_GO_CLASS_INDENTATION_STRING).Append(_GO_CLASS_INDENTATION_STRING).AppendFormat("log.Error(\"Unmarshal {0} err: \", err)", fileName).AppendLine();
         stringBuilder.Append(_GO_CLASS_INDENTATION_STRING).AppendLine("}").AppendLine();
 
         stringBuilder.AppendLine("}").AppendLine();
