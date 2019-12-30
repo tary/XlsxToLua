@@ -50,7 +50,7 @@ public class TableExportToGoClassHelper
         stringBuilder.Append(_GO_CLASS_INDENTATION_STRING).Append("\"encoding/json\"").AppendLine();
         stringBuilder.Append(_GO_CLASS_INDENTATION_STRING).Append("\"io/ioutil\"").AppendLine();
         stringBuilder.Append(_GO_CLASS_INDENTATION_STRING).Append("\"sync\"").AppendLine().AppendLine();
-        stringBuilder.Append(_GO_CLASS_INDENTATION_STRING).Append("log \"github.com/cihub/seelog\"").AppendLine();
+        stringBuilder.Append(_GO_CLASS_INDENTATION_STRING).Append("log \"zeus/logger\"").AppendLine();
         stringBuilder.AppendLine(")").AppendLine();
         ////////////////////////////////////////////////////////////////
 
