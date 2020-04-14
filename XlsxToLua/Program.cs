@@ -1115,7 +1115,7 @@ public class Program
             string errorString = null;
             DataSet ds = XlsxReader.ReadXlsxFile(filePath, out errorString);
             stopwatch.Stop();
-            Utils.Log(string.Format("成功，耗时：{0}毫秒", stopwatch.ElapsedMilliseconds));
+            //Utils.Log(string.Format("成功，耗时：{0}毫秒", stopwatch.ElapsedMilliseconds));
             if (string.IsNullOrEmpty(errorString))
             {
                 Dictionary<string, List<string>> tableConfig = null;
@@ -1243,8 +1243,6 @@ public class Program
                     TableExportToLuaHelper.ExportTableToLua(tableInfo, out errorString);
                     if (errorString != null)
                         Utils.LogErrorAndExit(errorString);
-                    else
-                        Utils.Log("按默认方式导出成功");
                 }
                 // 判断是否要额外导出为csv文件
                 if (AppValues.ExportCsvTableNames.Contains(tableName))

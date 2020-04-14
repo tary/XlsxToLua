@@ -309,7 +309,7 @@ public class TableAnalyzeHelper
             // 独立字段未填写字段名以及导出数据库信息，视为无效列，直接忽略
             else if (string.IsNullOrEmpty(databaseInfoString))
             {
-                Utils.LogWarning(string.Format("警告：第{0}列未填写变量名，也未填写导出数据库信息，将被视为无效列而忽略", Utils.GetExcelColumnName(fieldInfo.ColumnSeq + 1)));
+                //Utils.LogWarning(string.Format("警告：第{0}列未填写变量名，也未填写导出数据库信息，将被视为无效列而忽略", Utils.GetExcelColumnName(fieldInfo.ColumnSeq + 1)));
                 errorString = null;
                 nextFieldColumnIndex = columnIndex + 1;
                 return null;
