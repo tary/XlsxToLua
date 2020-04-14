@@ -323,22 +323,44 @@ public class Utils
             return null;
     }
 
+    public static bool GetInnerBracketParam(string param, out string paramString)
+    {
+        if (string.IsNullOrEmpty(param))
+        {
+            paramString = null;
+            return false;
+        }
+        int leftBracketIndex = param.IndexOf('(');
+        int rightBracketIndex = param.LastIndexOf(')');
+        if (leftBracketIndex == -1 || rightBracketIndex == -1 || leftBracketIndex > rightBracketIndex)
+        {
+            paramString = null;
+            return false;
+        }
+
+        paramString = param.Substring(leftBracketIndex + 1, rightBracketIndex - leftBracketIndex - 1).Trim();
+        return true;
+    }
     /// <summary>
     /// 解析在英文小括号内用|分隔的Excel文件名
     /// </summary>
     public static string[] GetExcelFileNames(string paramString, out string errorString)
     {
-        int leftBracketIndex = paramString.IndexOf('(');
-        int rightBracketIndex = paramString.LastIndexOf(')');
-        if (leftBracketIndex == -1 || rightBracketIndex == -1 || leftBracketIndex > rightBracketIndex)
+        string fileNameString;
+        if (GetInnerBracketParam(paramString, out fileNameString))
         {
-            errorString = "必须在英文小括号内声明Excel文件名";
-            return null;
+            return GetExcelFileNamesByInnerParam(fileNameString, out errorString);
         }
-        else
+
+        errorString = "必须在英文小括号内声明Excel文件名";
+        return null;
+    }
+
+    public static string[] GetExcelFileNamesByInnerParam(string innerBracketParam, out string errorString)
+    {
+        if (innerBracketParam != null && innerBracketParam.Length > 0)
         {
-            string fileNameString = paramString.Substring(leftBracketIndex + 1, rightBracketIndex - leftBracketIndex - 1).Trim();
-            string[] fileNames = fileNameString.Split(new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries);
+            string[] fileNames = innerBracketParam.Split(new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries);
             if (fileNames.Length < 1)
             {
                 errorString = "必须在英文小括号内声明至少一个Excel文件名";
@@ -350,6 +372,38 @@ public class Utils
                 return fileNames;
             }
         }
+
+        errorString = "必须在英文小括号内声明Excel文件名";
+        return null;
+    }
+
+    public static bool ParserIncludeFileNameList(string param, ref List<string> allFile, string paramName, ref List<string> outResult, bool emptyAsDefault = true)
+    {
+        string errorString;
+        string[] fileNames = GetExcelFileNames(param, out errorString);
+        if(emptyAsDefault)
+        {
+            outResult.AddRange(allFile);
+            return true;
+        }
+
+        if (errorString != null)
+        {
+            Utils.LogErrorAndExit(string.Format("解析{0}参数{1}错误{2}", paramName, param, errorString));
+            return false;
+        }
+
+        // 检查指定导出的Excel文件是否存在
+        foreach (string fileName in fileNames)
+        {
+            if (!allFile.Contains(fileName))
+                Utils.LogErrorAndExit(string.Format("要求额外导出为csv文件的Excel表（{0}）不存在，请检查后重试并注意区分大小写", 
+                    Utils.CombinePath(AppValues.ExportCsvPath, string.Concat(fileName, ".xlsx"))));
+            else
+                outResult.Add(fileName);
+        }
+        
+        return true;
     }
 
     public static void Log(string logString, ConsoleColor color = ConsoleColor.White)
