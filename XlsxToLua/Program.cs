@@ -969,6 +969,20 @@ public class Program
                 AppValues.IsAllowedNullNumber = true;
                 Utils.LogWarning("警告：你选择了允许int、long、float字段中存在空值，建议为逻辑上不允许为空的数值型字段声明使用notEmpty检查规则");
             }
+            else if (param.StartsWith(AppValues.EXPORT_GROUP_PARAM_STRING, StringComparison.CurrentCultureIgnoreCase))
+            {
+                //AppValues.ExportExcludeGroupNames
+                string errorString;
+                string[] groupList = Utils.GetExcelFileNames(param, out errorString);
+                if (errorString != null || groupList == null || groupList.Length == 0)
+                {
+                    Utils.LogErrorAndExit(string.Format("错误：声明要额外导出指定Excel文件为csv对应Java类文件，就必须同时声明用于配置Java类文件导出参数的{0}", AppValues.EXPORT_JAVA_CLASS_PARAM_PARAM_STRING));
+                }
+                else
+                {
+                    AppValues.ExportGroupNames.AddRange(groupList);
+                }
+            }
             else
                 Utils.LogErrorAndExit(string.Format("错误：未知的指令参数{0}", param));
         }
@@ -1123,6 +1137,12 @@ public class Program
                     {
                         if (AppValues.EXCEL_DATA_SHEET_NAME.Equals(tb.TableName, StringComparison.CurrentCultureIgnoreCase))
                         {
+                            if (analyzeIsGroupIgnore(ref tableConfig, fileName))
+                            {
+                                Utils.Log(string.Format("跳过导出表{0}", fileName), ConsoleColor.Blue);
+                                AppValues.ExportTableNameAndPath.Remove(fileName);
+                                continue;
+                            }
                             if (!analyzeTable(ref tableConfig, tb, fileName, out errorString))
                                 Utils.LogErrorAndExit(string.Format("错误：解析{0}失败\n{1}", filePath, errorString));
                             AppValues.ExportTableNameAndFileName.Add(fileName, fileName);
@@ -1133,6 +1153,13 @@ public class Program
                             continue;
 
                         string tableName = tb.TableName.Replace("$", "");
+                        
+                        if (analyzeIsGroupIgnore(ref tableConfig, tableName))
+                        {
+                            Utils.Log(string.Format("跳过导出表{0}", tableName), ConsoleColor.Blue);
+                            continue;
+                        }                
+
                         if (!analyzeTable(ref tableConfig, tb, tableName, out errorString))
                         {
                             Utils.LogErrorAndExit(string.Format("错误：解析{0}失败\n{1}", filePath, errorString));
@@ -1191,7 +1218,7 @@ public class Program
                     if (inputParams.Contains(AppValues.CONFIG_PARAM_NOT_EXPORT_ORIGINAL_TABLE))
                     {
                         isNeedExportOriginalTable = false;
-                        if (inputParams.Count == 1)
+                        if (inputParams.Count <= 1)
                             Utils.LogWarning(string.Format("警告：你设置了不对表格\"{0}\"按默认方式进行导出，而又没有指定任何其他自定义导出规则，本工具对此表格不进行任何导出，请确认是否真要如此", tableInfo.TableName));
                         else
                             Utils.Log("你设置了不对此表进行默认规则导出");
@@ -1243,8 +1270,6 @@ public class Program
                     TableExportToJavaClassHelper.ExportTableToJavaClass(tableInfo, out errorString);
                     if (errorString != null)
                         Utils.LogErrorAndExit(errorString);
-                    else
-                        Utils.Log("额外导出为csv对应Java类文件成功");
                 }
                 // 判断是否要额外导出为csv对应UESlua文件
                 if (AppValues.ExportUESluaTableNames.Contains(fileName))
@@ -1252,8 +1277,6 @@ public class Program
                     TableExportToUESluaClassHelper.ExportTableToUESluaClass(tableInfo, out errorString);
                     if (errorString != null)
                         Utils.LogErrorAndExit(errorString);
-                    else
-                        Utils.Log("额外导出为csv对应UESlua文件成功");
                 }
                 // 判断是否要额外导出为csv对应Go文件
                 if (AppValues.ExportGoTableNames.Contains(fileName))
@@ -1261,8 +1284,6 @@ public class Program
                     TableExportToGoClassHelper.ExportTableToGoClass(tableInfo, out errorString);
                     if (errorString != null)
                         Utils.LogErrorAndExit(errorString);
-                    else
-                        Utils.Log("额外导出为csv对应Go文件成功");
                 }
 
                 // 判断是否要额外导出为csv对应Lang文件
@@ -1280,8 +1301,6 @@ public class Program
                     TableExportToJsonHelper.ExportTableToJson(tableInfo, out errorString);
                     if (errorString != null)
                         Utils.LogErrorAndExit(errorString);
-                    else
-                        Utils.Log("额外导出为json文件成功");
                 }
             }
             // 进行数据库导出
@@ -1313,6 +1332,54 @@ public class Program
 
         Utils.Log("\n导出完毕", ConsoleColor.Green);
         return errorLevel;
+    }
+
+    private static bool analyzeIsGroupIgnore(ref Dictionary<string, List<string>> tableConfig, string tableName)
+    {
+        if (tableConfig == null || AppValues.ExportGroupNames == null || AppValues.ExportGroupNames.Count == 0)
+        {
+            return false;
+        }
+
+        if (tableName != null && tableName.Length > 0)
+        {
+            string tableGroupFeild = string.Concat(AppValues.CONFIG_NAME_GROUP, "|", tableName);
+            if (tableConfig.ContainsKey(tableGroupFeild))
+            {
+                List<string> groupCfg = tableConfig[tableGroupFeild];
+                if (groupCfg.Count == 0)
+                    return false;
+
+                foreach (string group in AppValues.ExportGroupNames)
+                {
+                    if (groupCfg.Contains(group))
+                    {
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+        }
+
+        if (tableConfig.ContainsKey(AppValues.CONFIG_NAME_GROUP))
+        {
+            List<string> groupCfg = tableConfig[AppValues.CONFIG_NAME_GROUP];
+            if (groupCfg.Count == 0)
+                return false;
+
+            foreach (string group in AppValues.ExportGroupNames)
+            {
+                if (groupCfg.Contains(group))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        return false;
     }
 
     private static bool analyzeTable(ref Dictionary<string, List<string>> tableConfig, DataTable dataTable, string name, out string errorString)

@@ -123,6 +123,11 @@ public class AppValues
     public const string EXPORT_JSON_PARAM_PARAM_STRING = "-exportJsonParam";
 
     /// <summary>
+    /// 声明导出分组的参数
+    /// </summary>
+    public const string EXPORT_GROUP_PARAM_STRING = "-exportGroup";
+
+    /// <summary>
     /// 导出csv文件参数下属的具体参数，用于配置导出路径
     /// </summary>
     public const string EXPORT_CSV_PARAM_EXPORT_PATH_PARAM_STRING = "exportPath";
@@ -279,6 +284,8 @@ public class AppValues
     public const string CONFIG_NAME_ADD_KEY_TO_LUA_TABLE = "addKeyToLuaTable";
     // 声明某张表格导出csv对应C#或Java文件的类名
     public const string CONFIG_NAME_EXPORT_CSV_CLASS_NAME = "exportCsvClassName";
+    // 声明某张表格导出csv对应分组
+    public const string CONFIG_NAME_GROUP = "group";
 
     // 声明对某张表格不进行默认导出的参数配置
     public const string CONFIG_PARAM_NOT_EXPORT_ORIGINAL_TABLE = "-notExportOriginalTable";
@@ -512,6 +519,11 @@ public class AppValues
     /// 存储本次要额外导出为csv对应Java类文件的Excel文件名
     /// </summary>
     public static List<string> ExportJavaClassTableNames = new List<string>();
+
+    /// <summary>
+    /// 存储本次要额外导出为csv对应Java类文件的Excel文件名
+    /// </summary>
+    public static List<string> ExportGroupNames = new List<string>();
 
     /// <summary>
     /// 导出csv对应Java类文件的存储路径
