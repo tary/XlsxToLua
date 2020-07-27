@@ -1,0 +1,22 @@
+#除了UE_SLUA_API之外均可配置为temp 表示输出到临时目录
+
+#Lua输出目录
+LUA_TABLE_EXPORT_PATH=temp
+
+#C++API
+UE_SLUA_API=WUSHUANG_API
+
+#C++代码输出目录
+UE_SLUA_EXPORT_PATH=temp
+
+#服务器代码输出目录
+UE_GO_EXPORT_PATH=F:\gameserver\server\src\excel
+
+#服务器Json配置输出目录
+UE_JSON_EXPORT_PATH=F:\gameserver\server\res\excel
+
+#表格文件路径
+EXCEL_PATH=F:\WuShuangTable\Tables
+
+#语言表
+LANG_PATH=F:\WuShuangTable\ExportLang\lang.xlsx
