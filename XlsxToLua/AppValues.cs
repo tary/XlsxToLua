@@ -58,11 +58,6 @@ public class AppValues
     public const string NO_LANG_PARAM_STRING = "-noLang";
 
     /// <summary>
-    /// 声明当lang型数据key在lang文件中找不到对应值时，在lua文件输出字段值为空字符串的命令参数
-    /// </summary>
-    public const string LANG_NOT_MATCHING_PRINT_PARAM_STRING = "-printEmptyStringWhenLangNotMatching";
-
-    /// <summary>
     /// 声明只将部分指定Excel表进行导出的命令参数
     /// </summary>
     public const string PART_EXPORT_PARAM_STRING = "-part";
@@ -386,11 +381,6 @@ public class AppValues
     public static bool IsNeedCheck = true;
 
     /// <summary>
-    /// 当lang型数据key在lang文件中找不到对应值时，是否在lua文件输出字段值为空字符（默认为输出nil）
-    /// </summary>
-    public static bool IsPrintEmptyStringWhenLangNotMatching = false;
-
-    /// <summary>
     /// 用户输入的是否导出表格数据到MySQL数据库
     /// </summary>
     public static bool IsExportMySQL = false;
@@ -496,64 +486,9 @@ public class AppValues
     public static bool ExportCsvIsExportColumnDataType = true;
 
     /// <summary>
-    /// 存储本次要额外导出为csv对应C#类文件的Excel文件名
-    /// </summary>
-    public static List<string> ExportCsClassTableNames = new List<string>();
-
-    /// <summary>
-    /// 导出csv对应C#类文件的存储路径
-    /// </summary>
-    public static string ExportCsClassPath = null;
-
-    /// <summary>
-    /// 导出csv对应C#类文件中的命名空间
-    /// </summary>
-    public static string ExportCsClassNamespace = null;
-
-    /// <summary>
-    /// 导出csv对应C#类文件中的引用类库
-    /// </summary>
-    public static List<string> ExportCsClassUsing = null;
-
-    /// <summary>
-    /// 存储本次要额外导出为csv对应Java类文件的Excel文件名
-    /// </summary>
-    public static List<string> ExportJavaClassTableNames = new List<string>();
-
-    /// <summary>
     /// 存储本次要额外导出为csv对应Java类文件的Excel文件名
     /// </summary>
     public static List<string> ExportGroupNames = new List<string>();
-
-    /// <summary>
-    /// 导出csv对应Java类文件的存储路径
-    /// </summary>
-    public static string ExportJavaClassPath = null;
-
-    /// <summary>
-    /// 导出csv对应Java类文件的包名
-    /// </summary>
-    public static string ExportJavaClassPackage = null;
-
-    /// <summary>
-    /// 导出csv对应Java类文件中的引用类库
-    /// </summary>
-    public static List<string> ExportJavaClassImport = null;
-
-    /// <summary>
-    /// 导出csv对应Java类文件中，是否将时间型转为Date而不是Calendar，默认为true
-    /// </summary>
-    public static bool ExportJavaClassIsUseDate = true;
-
-    /// <summary>
-    /// 导出csv对应Java类文件中，是否生成无参构造函数，默认为false
-    /// </summary>
-    public static bool ExportJavaClassisGenerateConstructorWithoutFields = false;
-
-    /// <summary>
-    /// 导出csv对应Java类文件中，是否生成含全部参数的构造函数，默认为false
-    /// </summary>
-    public static bool ExportJavaClassIsGenerateConstructorWithAllFields = false;
 
     /// <summary>
     /// 导出csv对应C#或Java类的类名前缀
@@ -598,27 +533,6 @@ public class AppValues
     /// <summary>
     /// 声明将指定的Excel文件额外导出为csv对应UE_SLUA类文件
     /// </summary>
-    public const string EXPORT_UE_SLUA_FLAG_STRING = "-exportUESLua";
-
-    /// <summary>
-    /// 声明导出与csv对应UESlua文件的参数
-    /// </summary>
-    public const string EXPORT_UE_SLUA_FLAG_PARAM_STRING = "-exportUESLuaParam";
-
-
-    /// <summary>
-    /// 导出csv对应UESlua文件参数下属的具体参数，用于配置导出路径
-    /// </summary>
-    public const string EXPORT_UE_SLUA_PARAM_EXPORT_PATH_PARAM_STRING = "exportPath";
-
-    /// <summary>
-    /// 存储本次要额外导出为csv对应UESlua文件的Excel文件名
-    /// </summary>
-    public static List<string> ExportUESluaTableNames = new List<string>();
-    
-    /// <summary>
-    /// 声明将指定的Excel文件额外导出为csv对应UE_SLUA类文件
-    /// </summary>
     public const string EXPORT_GO_FLAG_STRING = "-exportGo";
 
     /// <summary>
@@ -635,31 +549,6 @@ public class AppValues
     /// 存储本次要额外导出为csv对应UESlua文件的Excel文件名
     /// </summary>
     public static List<string> ExportGoTableNames = new List<string>();
-
-    /// <summary>
-    /// 导出csv对应UE_SLUA类文件参数下属的具体参数，用于配置引用类库
-    /// </summary>
-    public const string EXPORT_UE_SLUA_PARAM_IMPORT_PARAM_STRING = "import";
-
-    /// <summary>
-    /// 导出csv对应UE_SLUA类文件参数下属的具体参数，用于配置引用类库
-    /// </summary>
-    public const string EXPORT_UE_SLUA_PARAM_API_PARAM_STRING = "cppAPI";
-
-    /// <summary>
-    /// 导出csv对应C++类文件中，class WARFRAMEDEMO_API UWFAudioConfig 中的WARFRAMEDEMO_API字段
-    /// </summary>
-    public static string ExportUESluaExportAPIName = null;
-
-    /// <summary>
-    /// 导出csv对应C++类文件中的引用类库
-    /// </summary>
-    public static List<string> ExportUESluaImport = null;
-
-    /// <summary>
-    /// 导出csv对应UESlua类文件的存储路径
-    /// </summary>
-    public static string ExportUESluaPath = null;
 
     /// <summary>
     /// 导出csv对应Go类文件的存储路径
@@ -685,4 +574,24 @@ public class AppValues
     /// 存储运行时打印的所有信息，在程序运行完毕后输出为txt文件，从而解决如果输出内容过多控制台无法显示全部信息的问题
     /// </summary>
     public static StringBuilder LogContent = new StringBuilder();
+
+
+    /// <summary>
+    /// 打印详细日志
+    /// </summary>
+    public const string EXPORT_VERBOSE_LOG_STRING = "-verbose";
+    // 打印详细日志
+    public static bool VerboseModeFlag = false;
+
+    /// <summary>
+    /// 导出UE文件引用
+    /// </summary>
+    public const string EXPORT_UE_FILE_STRING = "-exportUERef";
+    // 导出UE文件引用
+    public static bool ExportUERef = false;
+
+    public static string CheckRuleUEFileFlag = "UEFile";
+
+    public static string UEFileRefPath = "";
+
 }

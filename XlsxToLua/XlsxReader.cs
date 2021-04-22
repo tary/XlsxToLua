@@ -17,11 +17,11 @@ public class XlsxReader
             errorString = string.Format("{0}文件不存在", filePath);
             return null;
         }
-        else if (fileState == FileState.IsOpen)
-        {
-            errorString = string.Format("{0}文件正在被其他软件打开，请关闭后重新运行本工具", filePath);
-            return null;
-        }
+//         else if (fileState == FileState.IsOpen)
+//         {
+//             errorString = string.Format("{0}文件正在被其他软件打开，请关闭后重新运行本工具", filePath);
+//             return null;
+//         }
 
         OleDbConnection conn = null;
         OleDbDataAdapter da = null;

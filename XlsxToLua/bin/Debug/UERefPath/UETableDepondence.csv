@@ -1,0 +1,8 @@
+---,UEFile,Ref
+/Game/Demo/Monster/BP_M3002.BP_M3002,"/Game/Demo/Monster/BP_M3002.BP_M3002","(""Monster.RoleBP"",""Character.CharIcon"",""Character.BPPath"")"
+/Game/Demo/RoleData/m3001.m3001,"/Game/Demo/RoleData/m3001.m3001","(""Monster.RoleBP"",""Character.CharIcon"",""Character.BPPath"")"
+/Game/Demo/RoleData/DamageTest.DamageTest,"/Game/Demo/RoleData/DamageTest.DamageTest","(""Monster.RoleBP"",""Character.CharIcon"",""Character.BPPath"")"
+/Game/Demo/RoleData/TestBaseRole2.TestBaseRole2,"/Game/Demo/RoleData/TestBaseRole2.TestBaseRole2","(""Monster.RoleBP"",""Character.CharIcon"")"
+/Game/Demo/Monster/BP_M3003.BP_M3003,"/Game/Demo/Monster/BP_M3003.BP_M3003","(""Monster.RoleBP"")"
+/Game/Character/NPC/N1002/N1002.N1002,"/Game/Character/NPC/N1002/N1002.N1002","(""Monster.RoleBP"")"
+/Game/Character/Monster/M3004/RoleData/BP_M3004.BP_M3004,"/Game/Character/Monster/M3004/RoleData/BP_M3004.BP_M3004","(""Monster.RoleBP"")"

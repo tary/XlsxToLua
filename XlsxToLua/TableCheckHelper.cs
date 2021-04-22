@@ -137,6 +137,11 @@ public class TableCheckHelper
                         CheckFile(fieldInfo, checkRule, out errorString);
                         break;
                     }
+                case TableCheckType.UEFile:
+                    {
+                        CheckUEContentFile(fieldInfo, checkRule, out errorString);
+                        break;
+                    }
                 case TableCheckType.MapString:
                     {
                         MapStringCheckHelper.CheckMapString(fieldInfo, checkRule, out errorString);
@@ -262,6 +267,13 @@ public class TableCheckHelper
         {
             FieldCheckRule checkRule = new FieldCheckRule();
             checkRule.CheckType = TableCheckType.File;
+            checkRule.CheckRuleString = ruleString;
+            oneCheckRule.Add(checkRule);
+        }
+        else if (ruleString.StartsWith(AppValues.CheckRuleUEFileFlag, StringComparison.CurrentCultureIgnoreCase))
+        {
+            FieldCheckRule checkRule = new FieldCheckRule();
+            checkRule.CheckType = TableCheckType.UEFile;
             checkRule.CheckRuleString = ruleString;
             oneCheckRule.Add(checkRule);
         }
@@ -1904,6 +1916,119 @@ public class TableCheckHelper
     /// <summary>
     /// 用于检查string型的文件路径对应的文件是否存在
     /// </summary>
+    public static bool CheckUEContentFile(FieldInfo fieldInfo, FieldCheckRule checkRule, out string errorString)
+    {
+        // 先判断是否输入了Client目录的路径
+        if (AppValues.ClientPath == null)
+        {
+            errorString = null;
+            return true;
+        }
+
+        if (!Directory.Exists(AppValues.ClientPath))
+        {
+            errorString = string.Format("文件存在性检查定义错误：声明的客户端目录{0}不存在，请检查定义的路径是否正确\n", AppValues.ClientPath);
+            return false;
+        }
+
+        if (fieldInfo.DataType != DataType.String)
+        {
+            errorString = string.Format("文件存在性检查定义只能用于string型的字段，而该字段为{0}型\n", fieldInfo.DataType);
+            return false;
+        }
+
+        const string commonFileExtent = "uasset";
+        string fileExtent = commonFileExtent;
+        int extentStart = checkRule.CheckRuleString.IndexOf(':');
+        if (extentStart != -1)
+        {
+            fileExtent = checkRule.CheckRuleString.Substring(extentStart+1);
+        }
+
+        fileExtent = "." + fileExtent;
+
+        // 存储不存在的文件信息（key：行号， value：输入的文件名）
+        Dictionary<int, string> inexistFileInfo = new Dictionary<int, string>();
+        //路径配置错误
+        List<int> illegalFileNames = new List<int>();
+
+        const string PathStartFlag = "/Game/";
+
+        for (int i = 0; i < fieldInfo.Data.Count; ++i)
+        {
+            // 忽略无效集合元素下属子类型的空值
+            if (fieldInfo.Data[i] == null)
+                continue;
+
+            // 文件名中不允许含有\或/，即不支持文件在填写路径的非同级目录
+            string inputFileName = fieldInfo.Data[i].ToString().Trim();
+            if (string.IsNullOrEmpty(inputFileName))
+                continue;
+
+            //Blueprint'/Game/Demo/RoleData/m3001.m3001'           
+            int PathStartIdx = inputFileName.IndexOf(PathStartFlag);
+            if (PathStartIdx == -1)
+            {
+                illegalFileNames.Add(i);
+                continue;
+            }
+            PathStartIdx += PathStartFlag.Length;
+
+            int PathEndDirIdx = inputFileName.LastIndexOf('/');
+            if (PathEndDirIdx < PathStartIdx)
+            {
+                PathEndDirIdx = PathStartIdx;
+            }
+            else
+            {
+                PathEndDirIdx++;
+            }
+
+            int PathEndIdx = inputFileName.LastIndexOf('.');
+            if (PathEndIdx <= PathEndDirIdx)
+            {
+                illegalFileNames.Add(i);
+                continue;
+            }
+
+            string fileName = inputFileName.Substring(PathStartIdx, PathEndIdx - PathStartIdx) + fileExtent;
+
+            if (!File.Exists(Path.Combine(AppValues.ClientPath, fileName)))
+            {
+                inexistFileInfo.Add(i, inputFileName);
+            }
+        }
+
+        if (inexistFileInfo.Count > 0 || illegalFileNames.Count > 0)
+        {
+            StringBuilder errorStringBuild = new StringBuilder();
+            if (illegalFileNames.Count > 0)
+            {
+                errorStringBuild.Append("单元格中填写的路径未UE引用路径,如:Blueprint'/Game/Demo/RoleData/m3001.m3001'，以下行对应的文件名不符合此规则：");
+                string separator = ", ";
+                foreach (int lineNum in illegalFileNames)
+                    errorStringBuild.AppendFormat("{0}{1}", lineNum + AppValues.DATA_FIELD_DATA_START_INDEX + 1, separator);
+
+                // 去掉末尾多余的", "
+                errorStringBuild.Remove(errorStringBuild.Length - separator.Length, separator.Length);
+
+                errorStringBuild.Append("\n");
+            }
+            if (inexistFileInfo.Count > 0)
+            {
+                errorStringBuild.AppendLine("存在以下找不到的文件：");
+                foreach (var item in inexistFileInfo)
+                    errorStringBuild.AppendFormat("第{0}行数据，填写的文件名为{1}\n", item.Key + AppValues.DATA_FIELD_DATA_START_INDEX + 1, item.Value);
+            }
+
+            errorString = errorStringBuild.ToString();
+            return false;
+        }
+
+        errorString = null;
+        return true;
+    }
+
     public static bool CheckFile(FieldInfo fieldInfo, FieldCheckRule checkRule, out string errorString)
     {
         // 先判断是否输入了Client目录的路径
@@ -2560,6 +2685,7 @@ public enum TableCheckType
     GreaterThan,  // 值大小比较检查（同一行中某个字段的值必须大于另一字段的值）
     Func,         // 自定义检查函数
     File,         // 文件存在性检查
+    UEFile,         // 文件存在性检查
     MapString,    // mapString类型的内容检查
 }
 

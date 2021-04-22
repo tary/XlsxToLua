@@ -1,0 +1,17 @@
+{
+	"ImportGroups": [
+        {
+            "GroupName": "ReimportTableDep",
+            "FactoryName": "CSVImportFactory",
+            "bReplaceExisting": 1,
+            "bSkipReadOnly": 0,
+			"ImportSettings":
+			{
+				"ImportRowStruct":"UserDefinedStruct'\"/Game/Blueprint/Skill/UERef.UERef\"'",
+				"ImportType":"ECSV_DataTable"
+			}
+        }
+		
+    ]
+	
+}

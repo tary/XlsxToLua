@@ -62,7 +62,8 @@ public class Program
             Utils.LogErrorAndExit("错误：未输入项目Client目录的路径，如果不需要请输入参数-noClient");
         if (AppValues.NO_CLIENT_PATH_STRING.Equals(args[2], StringComparison.CurrentCultureIgnoreCase))
         {
-            Utils.LogWarning("警告：你选择了不指定Client文件夹路径，则本工具无法检查表格中填写的图片路径等对应的文件是否存在");
+            if (AppValues.VerboseModeFlag)
+                Utils.LogWarning("警告：你选择了不指定Client文件夹路径，则本工具无法检查表格中填写的图片路径等对应的文件是否存在");
             AppValues.ClientPath = null;
         }
         else if (Directory.Exists(args[2]))
@@ -202,17 +203,14 @@ public class Program
             else if (param.Equals(AppValues.UNCHECKED_PARAM_STRING, StringComparison.CurrentCultureIgnoreCase))
             {
                 AppValues.IsNeedCheck = false;
-                Utils.LogWarning("警告：你选择了不进行表格检查，请务必自己保证表格的正确性");
+                if (AppValues.VerboseModeFlag)
+                    Utils.Log("警告：你选择了不进行表格检查，请务必自己保证表格的正确性", ConsoleColor.Cyan);
             }
             else if (param.Equals(AppValues.NEED_COLUMN_INFO_PARAM_STRING, StringComparison.CurrentCultureIgnoreCase))
             {
                 AppValues.IsNeedColumnInfo = true;
-                Utils.LogWarning("你选择了在生成的lua文件最上方用注释形式显示列信息");
-            }
-            else if (param.Equals(AppValues.LANG_NOT_MATCHING_PRINT_PARAM_STRING, StringComparison.CurrentCultureIgnoreCase))
-            {
-                AppValues.IsPrintEmptyStringWhenLangNotMatching = true;
-                Utils.LogWarning("你选择了当lang型数据key在lang文件中找不到对应值时，在lua文件输出字段值为空字符串");
+                if (AppValues.VerboseModeFlag)
+                    Utils.Log("你选择了在生成的lua文件最上方用注释形式显示列信息", ConsoleColor.Cyan);
             }
             else if (param.Equals(AppValues.EXPORT_MYSQL_PARAM_STRING, StringComparison.CurrentCultureIgnoreCase))
             {
@@ -443,230 +441,6 @@ public class Program
                     continue;
                 }
             }
-            // 注意：-exportCsClass与-exportCsClassParam均以-exportCsClass开头，故要先判断-exportCsClassParam分支。这里将-exportCsClassParam的解析放到-exportCsClass的解析之中是为了只有声明了进行csv对应C#类文件导出时才解析导出参数
-            else if (param.StartsWith(AppValues.EXPORT_CS_CLASS_PARAM_PARAM_STRING, StringComparison.CurrentCultureIgnoreCase))
-                continue;
-            else if (param.StartsWith(AppValues.EXPORT_CS_CLASS_PARAM_STRING, StringComparison.CurrentCultureIgnoreCase))
-            {
-                // 首先解析并判断配置的csv对应C#类文件导出参数是否正确
-                string exportCsClassParamString = null;
-                for (int j = ParamStartIndex; j < args.Length; ++j)
-                {
-                    string tempParam = args[j];
-                    if (tempParam.StartsWith(AppValues.EXPORT_CS_CLASS_PARAM_PARAM_STRING, StringComparison.CurrentCultureIgnoreCase))
-                    {
-                        exportCsClassParamString = tempParam;
-                        break;
-                    }
-                }
-
-                if (string.IsNullOrEmpty(exportCsClassParamString))
-                {
-                    Utils.LogErrorAndExit(string.Format("错误：声明要额外导出指定Excel文件为csv对应C#类文件，就必须同时声明用于配置C#类文件导出参数的{0}", AppValues.EXPORT_CS_CLASS_PARAM_PARAM_STRING));
-                }
-                else
-                {
-                    string paramString;
-                    if (!Utils.GetInnerBracketParam(exportCsClassParamString, out paramString))
-                    {
-                        Utils.LogErrorAndExit(string.Format("错误：声明导出csv对应C#类文件的参数{0}后必须在英文小括号内声明各个具体参数", AppValues.EXPORT_CS_CLASS_PARAM_PARAM_STRING));
-                    }
-                    else
-                    {
-                        // 通过|分隔各个参数
-                        string[] paramStringList = paramString.Split(new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries);
-                        // 解析各个具体参数
-                        foreach (string oneParamString in paramStringList)
-                        {
-                            string[] keyAndValue = oneParamString.Split(new char[] { '=' });
-                            if (keyAndValue.Length != 2)
-                                Utils.LogErrorAndExit(string.Format("声明的{0}参数下属的参数字符串{1}错误，参数名和配置值之间应用=分隔", AppValues.EXPORT_CS_CLASS_PARAM_PARAM_STRING, oneParamString));
-                            else
-                            {
-                                string key = keyAndValue[0].Trim();
-                                string value = keyAndValue[1];
-                                if (AppValues.EXPORT_CS_CLASS_PARAM_EXPORT_PATH_PARAM_STRING.Equals(key, StringComparison.CurrentCultureIgnoreCase))
-                                {
-                                    // 检查导出路径是否存在
-                                    if (!Directory.Exists(value))
-                                        Utils.LogErrorAndExit(string.Format("错误：声明的{0}参数下属的参数{1}所配置的导出csv对应C#类文件导出路径不存在", AppValues.EXPORT_CS_CLASS_PARAM_PARAM_STRING, AppValues.EXPORT_CS_CLASS_PARAM_EXPORT_PATH_PARAM_STRING));
-                                    else
-                                        AppValues.ExportCsClassPath = Path.GetFullPath(value);
-                                }
-                                else if (AppValues.EXPORT_CS_CLASS_PARAM_NAMESPACE_PARAM_STRING.Equals(key, StringComparison.CurrentCultureIgnoreCase))
-                                {
-                                    value = value.Trim();
-                                    if (string.IsNullOrEmpty(value))
-                                        Utils.LogWarning(string.Format("警告：声明的{0}参数下属的参数{1}所配置的导出csv对应C#类文件中的命名空间为空，若不想设置命名空间，可以直接不配置此参数，而不是将参数值留空", AppValues.EXPORT_CS_CLASS_PARAM_PARAM_STRING, AppValues.EXPORT_CS_CLASS_PARAM_NAMESPACE_PARAM_STRING));
-                                    else
-                                        AppValues.ExportCsClassNamespace = value;
-                                }
-                                else if (AppValues.EXPORT_CS_CLASS_PARAM_USING_PARAM_STRING.Equals(key, StringComparison.CurrentCultureIgnoreCase))
-                                {
-                                    value = value.Trim();
-                                    if (string.IsNullOrEmpty(value))
-                                        Utils.LogWarning(string.Format("警告：声明的{0}参数下属的参数{1}所配置的导出csv对应C#类文件中的引用类库为空，若不想设置引用类库，可以直接不配置此参数，而不是将参数值留空", AppValues.EXPORT_CS_CLASS_PARAM_PARAM_STRING, AppValues.EXPORT_CS_CLASS_PARAM_USING_PARAM_STRING));
-                                    else
-                                    {
-                                        // 通过英文逗号分隔各个引用类库
-                                        string[] usingList = value.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
-                                        List<string> exportCsClassUsing = new List<string>();
-                                        for (int index = 0; index < usingList.Length; ++index)
-                                        {
-                                            string usingString = usingList[index].Trim();
-                                            if (!string.IsNullOrEmpty(usingString) && !exportCsClassUsing.Contains(usingString))
-                                                exportCsClassUsing.Add(usingString);
-
-                                            if (exportCsClassUsing.Count > 0)
-                                                AppValues.ExportCsClassUsing = exportCsClassUsing;
-                                            else
-                                                Utils.LogWarning(string.Format("警告：声明的{0}参数下属的参数{1}所配置的导出csv对应C#类文件中的引用类库均为空，若不想设置引用类库，可以直接不配置此参数，而不是将参数值留空", AppValues.EXPORT_CS_CLASS_PARAM_PARAM_STRING, AppValues.EXPORT_CS_CLASS_PARAM_USING_PARAM_STRING));
-                                        }
-                                    }
-                                }
-                                else
-                                    Utils.LogErrorAndExit(string.Format("错误：声明的{0}参数下属的参数{1}非法", AppValues.EXPORT_CS_CLASS_PARAM_PARAM_STRING, key));
-                            }
-                        }
-                        // 要求必须含有exportPath参数
-                        if (AppValues.ExportCsClassPath == null)
-                            Utils.LogErrorAndExit(string.Format("错误：声明要额外导出csv对应C#类文件，就必须同时在{0}参数下声明用于配置导出路径的参数{1}", AppValues.EXPORT_CS_CLASS_PARAM_PARAM_STRING, AppValues.EXPORT_CS_CLASS_PARAM_EXPORT_PATH_PARAM_STRING));
-                    }
-                }
-
-                // 先判断是否声明对所有文件进行导出
-                if (!Utils.ParserIncludeFileNameList(param, ref existExcelFileNames, AppValues.EXPORT_CS_CLASS_PARAM_STRING, ref AppValues.ExportCsClassTableNames))
-                {
-                    Utils.LogErrorAndExit(string.Format("必须在英文小括号内声明要导出为csv对应C#类文件的Excel表格名，若要全部导出，请配置为{0}参数", AppValues.EXPORT_ALL_TO_EXTRA_FILE_PARAM_STRING));
-                }
-            }
-            // 注意：-exportJavaClass与-exportJavaClassParam均以-exportJavaClass开头，故要先判断-exportJavaClassParam分支。这里将-exportJavaClassParam的解析放到-exportJavaClass的解析之中是为了只有声明了进行csv对应Java类文件导出时才解析导出参数
-            else if (param.StartsWith(AppValues.EXPORT_JAVA_CLASS_PARAM_PARAM_STRING, StringComparison.CurrentCultureIgnoreCase))
-                continue;
-            else if (param.StartsWith(AppValues.EXPORT_JAVA_CLASS_PARAM_STRING, StringComparison.CurrentCultureIgnoreCase))
-            {
-                // 首先解析并判断配置的csv对应Java类文件导出参数是否正确
-                string exportJavaClassParamString = null;
-                for (int j = ParamStartIndex; j < args.Length; ++j)
-                {
-                    string tempParam = args[j];
-                    if (tempParam.StartsWith(AppValues.EXPORT_JAVA_CLASS_PARAM_PARAM_STRING, StringComparison.CurrentCultureIgnoreCase))
-                    {
-                        exportJavaClassParamString = tempParam;
-                        break;
-                    }
-                }
-                if (exportJavaClassParamString == null)
-                {
-                    Utils.LogErrorAndExit(string.Format("错误：声明要额外导出指定Excel文件为csv对应Java类文件，就必须同时声明用于配置Java类文件导出参数的{0}", AppValues.EXPORT_JAVA_CLASS_PARAM_PARAM_STRING));
-                }
-                else
-                {
-                    string paramString;
-                    if (!Utils.GetInnerBracketParam(exportJavaClassParamString, out paramString))
-                    {
-                        Utils.LogErrorAndExit(string.Format("错误：声明导出csv对应Java类文件的参数{0}后必须在英文小括号内声明各个具体参数", AppValues.EXPORT_JAVA_CLASS_PARAM_PARAM_STRING));
-                    }
-                    else
-                    {
-                        // 通过|分隔各个参数
-                        string[] paramStringList = paramString.Split(new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries);
-                        // 解析各个具体参数
-                        foreach (string oneParamString in paramStringList)
-                        {
-                            string[] keyAndValue = oneParamString.Split(new char[] { '=' });
-                            if (keyAndValue.Length != 2)
-                                Utils.LogErrorAndExit(string.Format("声明的{0}参数下属的参数字符串{1}错误，参数名和配置值之间应用=分隔", AppValues.EXPORT_JAVA_CLASS_PARAM_PARAM_STRING, oneParamString));
-                            else
-                            {
-                                string key = keyAndValue[0].Trim();
-                                string value = keyAndValue[1];
-                                if (AppValues.EXPORT_JAVA_CLASS_PARAM_EXPORT_PATH_PARAM_STRING.Equals(key, StringComparison.CurrentCultureIgnoreCase))
-                                {
-                                    // 检查导出路径是否存在
-                                    if (!Directory.Exists(value))
-                                        Utils.LogErrorAndExit(string.Format("错误：声明的{0}参数下属的参数{1}所配置的导出csv对应Java类文件导出路径不存在", AppValues.EXPORT_JAVA_CLASS_PARAM_PARAM_STRING, AppValues.EXPORT_JAVA_CLASS_PARAM_EXPORT_PATH_PARAM_STRING));
-                                    else
-                                        AppValues.ExportJavaClassPath = Path.GetFullPath(value);
-                                }
-                                else if (AppValues.EXPORT_JAVA_CLASS_PARAM_PACKAGE_PARAM_STRING.Equals(key, StringComparison.CurrentCultureIgnoreCase))
-                                {
-                                    value = value.Trim();
-                                    if (!string.IsNullOrEmpty(value))
-                                        AppValues.ExportJavaClassPackage = value;
-                                }
-                                else if (AppValues.EXPORT_JAVA_CLASS_PARAM_IMPORT_PARAM_STRING.Equals(key, StringComparison.CurrentCultureIgnoreCase))
-                                {
-                                    value = value.Trim();
-                                    if (string.IsNullOrEmpty(value))
-                                        Utils.LogWarning(string.Format("警告：声明的{0}参数下属的参数{1}所配置的导出csv对应Java类文件中的引用类库为空，若不想设置引用类库，可以直接不配置此参数，而不是将参数值留空", AppValues.EXPORT_JAVA_CLASS_PARAM_PARAM_STRING, AppValues.EXPORT_JAVA_CLASS_PARAM_IMPORT_PARAM_STRING));
-                                    else
-                                    {
-                                        // 通过英文逗号分隔各个引用类库
-                                        string[] importList = value.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
-                                        List<string> exportJavaClassPackage = new List<string>();
-                                        for (int index = 0; index < importList.Length; ++index)
-                                        {
-                                            string importString = importList[index].Trim();
-                                            if (!string.IsNullOrEmpty(importString) && !exportJavaClassPackage.Contains(importString))
-                                                exportJavaClassPackage.Add(importString);
-
-                                            if (exportJavaClassPackage.Count > 0)
-                                                AppValues.ExportJavaClassImport = exportJavaClassPackage;
-                                            else
-                                                Utils.LogWarning(string.Format("警告：声明的{0}参数下属的参数{1}所配置的导出csv对应Java类文件中的引用类库均为空，若不想设置引用类库，可以直接不配置此参数，而不是将参数值留空", AppValues.EXPORT_JAVA_CLASS_PARAM_PARAM_STRING, AppValues.EXPORT_JAVA_CLASS_PARAM_PACKAGE_PARAM_STRING));
-                                        }
-                                    }
-                                }
-                                else if (AppValues.EXPORT_JAVA_CLASS_PARAM_IS_USE_DATE_PARAM_STRING.Equals(key, StringComparison.CurrentCultureIgnoreCase))
-                                {
-                                    value = value.Trim();
-                                    if (value.Equals("true", StringComparison.CurrentCultureIgnoreCase))
-                                        AppValues.ExportJavaClassIsUseDate = true;
-                                    else if (value.Equals("false", StringComparison.CurrentCultureIgnoreCase))
-                                        AppValues.ExportJavaClassIsUseDate = false;
-                                    else
-                                        Utils.LogErrorAndExit(string.Format("警告：声明的{0}参数下属的参数{1}所配置的导出csv对应Java类文件中的时间型是否转为Date而不是Calendar型的选项值配置错误，必须配置为true或false", AppValues.EXPORT_JAVA_CLASS_PARAM_PARAM_STRING, AppValues.EXPORT_JAVA_CLASS_PARAM_IS_USE_DATE_PARAM_STRING));
-                                }
-                                else if (AppValues.EXPORT_JAVA_CLASS_PARAM_IS_GENERATE_CONSTRUCTOR_WITHOUT_FIELDS_PARAM_STRING.Equals(key, StringComparison.CurrentCultureIgnoreCase))
-                                {
-                                    value = value.Trim();
-                                    if (value.Equals("true", StringComparison.CurrentCultureIgnoreCase))
-                                        AppValues.ExportJavaClassisGenerateConstructorWithoutFields = true;
-                                    else if (value.Equals("false", StringComparison.CurrentCultureIgnoreCase))
-                                        AppValues.ExportJavaClassisGenerateConstructorWithoutFields = false;
-                                    else
-                                        Utils.LogErrorAndExit(string.Format("警告：声明的{0}参数下属的参数{1}所配置的导出csv对应Java类文件是否生成无参构造函数的选项值配置错误，必须配置为true或false", AppValues.EXPORT_JAVA_CLASS_PARAM_PARAM_STRING, AppValues.EXPORT_JAVA_CLASS_PARAM_IS_GENERATE_CONSTRUCTOR_WITHOUT_FIELDS_PARAM_STRING));
-                                }
-                                else if (AppValues.EXPORT_JAVA_CLASS_PARAM_IS_GENERATE_CONSTRUCTOR_WITH_ALL_FIELDS_PARAM_STRING.Equals(key, StringComparison.CurrentCultureIgnoreCase))
-                                {
-                                    value = value.Trim();
-                                    if (value.Equals("true", StringComparison.CurrentCultureIgnoreCase))
-                                        AppValues.ExportJavaClassIsGenerateConstructorWithAllFields = true;
-                                    else if (value.Equals("false", StringComparison.CurrentCultureIgnoreCase))
-                                        AppValues.ExportJavaClassIsGenerateConstructorWithAllFields = false;
-                                    else
-                                        Utils.LogErrorAndExit(string.Format("警告：声明的{0}参数下属的参数{1}所配置的导出csv对应Java类文件是否生成含所有参数的构造函数的选项值配置错误，必须配置为true或false", AppValues.EXPORT_JAVA_CLASS_PARAM_PARAM_STRING, AppValues.EXPORT_JAVA_CLASS_PARAM_IS_GENERATE_CONSTRUCTOR_WITH_ALL_FIELDS_PARAM_STRING));
-                                }
-                                else
-                                    Utils.LogErrorAndExit(string.Format("错误：声明的{0}参数下属的参数{1}非法", AppValues.EXPORT_JAVA_CLASS_PARAM_PARAM_STRING, key));
-                            }
-                        }
-                        // 要求必须含有exportPath参数
-                        if (AppValues.ExportJavaClassPath == null)
-                            Utils.LogErrorAndExit(string.Format("错误：声明要额外导出csv对应Java类文件，就必须同时在{0}参数下声明用于配置导出路径的参数{1}", AppValues.EXPORT_JAVA_CLASS_PARAM_PARAM_STRING, AppValues.EXPORT_JAVA_CLASS_PARAM_EXPORT_PATH_PARAM_STRING));
-                        // 要求必须含有package参数
-                        if (AppValues.ExportJavaClassPackage == null)
-                            Utils.LogErrorAndExit(string.Format("错误：声明要额外导出csv对应Java类文件，就必须同时在{0}参数下声明用于配置包名的参数{1}", AppValues.EXPORT_JAVA_CLASS_PARAM_PARAM_STRING, AppValues.EXPORT_JAVA_CLASS_PARAM_PACKAGE_PARAM_STRING));
-                    }
-                }
-
-                // 先判断是否声明对所有文件进行导出
-                if (!Utils.ParserIncludeFileNameList(param, ref existExcelFileNames, AppValues.EXPORT_JAVA_CLASS_PARAM_STRING, ref AppValues.ExportJavaClassTableNames))
-                {
-                    Utils.LogErrorAndExit(string.Format("必须在英文小括号内声明要导出为csv对应Java类文件的Excel表格名，若要全部导出，请配置为{0}参数", AppValues.EXPORT_ALL_TO_EXTRA_FILE_PARAM_STRING));
-                }
-            }
             else if (param.StartsWith(AppValues.EXPORT_LANG_PATH_PARAM_STRING, StringComparison.CurrentCultureIgnoreCase))
             {
                 string paramString;
@@ -682,99 +456,21 @@ public class Program
                         AppValues.ExportLangPath = Path.GetFullPath(paramString);
                 }
             }
-            else if (param.StartsWith(AppValues.EXPORT_UE_SLUA_FLAG_PARAM_STRING, StringComparison.CurrentCultureIgnoreCase))
-                continue;
-            else if (param.StartsWith(AppValues.EXPORT_UE_SLUA_FLAG_STRING, StringComparison.CurrentCultureIgnoreCase))
+            else if (param.StartsWith(AppValues.EXPORT_VERBOSE_LOG_STRING, StringComparison.CurrentCultureIgnoreCase))
             {
-                // 首先解析并判断配置的csv对应Java类文件导出参数是否正确
-                string exportUESluaParamString = null;
-                for (int j = ParamStartIndex; j < args.Length; ++j)
-                {
-                    string tempParam = args[j];
-                    if (tempParam.StartsWith(AppValues.EXPORT_UE_SLUA_FLAG_PARAM_STRING, StringComparison.CurrentCultureIgnoreCase))
-                    {
-                        exportUESluaParamString = tempParam;
-                        break;
-                    }
-                }
-                if (exportUESluaParamString == null)
-                {
-                    Utils.LogErrorAndExit(string.Format("错误：声明要额外导出指定Excel文件为csv对应Java类文件，就必须同时声明用于配置Java类文件导出参数的{0}", AppValues.EXPORT_UE_SLUA_FLAG_PARAM_STRING));
-                }
-                else
-                {
-                    string innerBracketParam;
-                    if (!Utils.GetInnerBracketParam(exportUESluaParamString, out innerBracketParam))
-                    {
-                        Utils.LogErrorAndExit(string.Format("错误：声明导出csv对应UEC++类文件的参数{0}后必须在英文小括号内声明各个具体参数", AppValues.EXPORT_UE_SLUA_FLAG_PARAM_STRING));
-                    }
-                    else
-                    {
-                        // 通过|分隔各个参数
-                        string[] paramStringList = innerBracketParam.Split(new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries);
-                        // 解析各个具体参数
-                        foreach (string oneParamString in paramStringList)
-                        {
-                            string[] keyAndValue = oneParamString.Split(new char[] { '=' });
-                            if (keyAndValue.Length != 2)
-                                Utils.LogErrorAndExit(string.Format("声明的{0}参数下属的参数字符串{1}错误，参数名和配置值之间应用=分隔", AppValues.EXPORT_UE_SLUA_FLAG_PARAM_STRING, oneParamString));
-                            else
-                            {
-                                string key = keyAndValue[0].Trim();
-                                string value = keyAndValue[1];
-                                if (AppValues.EXPORT_UE_SLUA_PARAM_EXPORT_PATH_PARAM_STRING.Equals(key, StringComparison.CurrentCultureIgnoreCase))
-                                {
-                                    // 检查导出路径是否存在
-                                    if (!Directory.Exists(value))
-                                        Utils.LogErrorAndExit(string.Format("错误：声明的{0}参数下属的参数{1}所配置的导出csv对应UESLua文件导出路径不存在", AppValues.EXPORT_UE_SLUA_FLAG_STRING, AppValues.EXPORT_UE_SLUA_PARAM_EXPORT_PATH_PARAM_STRING));
-                                    else
-                                        AppValues.ExportUESluaPath = Path.GetFullPath(value);
-                                }
-                                else if (AppValues.EXPORT_UE_SLUA_PARAM_API_PARAM_STRING.Equals(key, StringComparison.CurrentCultureIgnoreCase))
-                                {
-                                    AppValues.ExportUESluaExportAPIName = value.Trim();
-                                }
-                                else if (AppValues.EXPORT_UE_SLUA_PARAM_IMPORT_PARAM_STRING.Equals(key, StringComparison.CurrentCultureIgnoreCase))
-                                {
-                                    value = value.Trim();
-                                    if (string.IsNullOrEmpty(value))
-                                        Utils.LogWarning(string.Format("警告：声明的{0}参数下属的参数{1}所配置的导出csv对应UESlua类文件中的引用类库为空，若不想设置引用类库，可以直接不配置此参数，而不是将参数值留空", AppValues.EXPORT_UE_SLUA_FLAG_STRING, AppValues.EXPORT_UE_SLUA_PARAM_IMPORT_PARAM_STRING));
-                                    else
-                                    {
-                                        // 通过英文逗号分隔各个引用类库
-                                        string[] importList = value.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
-                                        List<string> exportUESluaPackage = new List<string>();
-                                        for (int index = 0; index < importList.Length; ++index)
-                                        {
-                                            string importString = importList[index].Trim();
-                                            if (!string.IsNullOrEmpty(importString) && !exportUESluaPackage.Contains(importString))
-                                                exportUESluaPackage.Add(importString);
+                AppValues.VerboseModeFlag = true;
+                continue;
+            }
+            else if (param.StartsWith(AppValues.EXPORT_UE_FILE_STRING, StringComparison.CurrentCultureIgnoreCase))
+            {
+                AppValues.ExportUERef = true;
 
-                                            if (exportUESluaPackage.Count > 0)
-                                                AppValues.ExportUESluaImport = exportUESluaPackage;
-                                            else
-                                                Utils.LogWarning(string.Format("警告：声明的{0}参数下属的参数{1}所配置的导出csv对应Java类文件中的引用类库均为空，若不想设置引用类库，可以直接不配置此参数，而不是将参数值留空", AppValues.EXPORT_UE_SLUA_FLAG_STRING, AppValues.EXPORT_UE_SLUA_PARAM_IMPORT_PARAM_STRING));
-                                        }
-                                    }
-                                }
-                                else
-                                    Utils.LogErrorAndExit(string.Format("错误：声明的{0}参数下属的参数{1}非法", AppValues.EXPORT_UE_SLUA_FLAG_PARAM_STRING, key));
-                            }
-                        }
-                        // 要求必须含有exportPath参数
-                        if (AppValues.ExportUESluaPath == null)
-                            Utils.LogErrorAndExit(string.Format("错误：声明要额外导出csv对应UESlua类文件，就必须同时在{0}参数下声明用于配置导出路径的参数{1}", AppValues.EXPORT_UE_SLUA_FLAG_PARAM_STRING, AppValues.EXPORT_UE_SLUA_PARAM_EXPORT_PATH_PARAM_STRING));
-                        // 要求必须含有package参数
-                        if (AppValues.ExportUESluaExportAPIName == null)
-                            Utils.LogErrorAndExit(string.Format("错误：声明要额外导出csv对应UESlua类文件，就必须同时在{0}参数下声明用于配置包名的参数{1}", AppValues.EXPORT_UE_SLUA_FLAG_PARAM_STRING, AppValues.EXPORT_UE_SLUA_PARAM_API_PARAM_STRING));
-                    }
-                }
-
-                // 先判断是否声明对所有文件进行导出
-                if (!Utils.ParserIncludeFileNameList(param, ref existExcelFileNames, AppValues.EXPORT_UE_SLUA_FLAG_STRING, ref AppValues.ExportUESluaTableNames))
+                string UERefPath;
+                if(Utils.GetInnerBracketParam(param, out UERefPath))
                 {
-                    Utils.LogErrorAndExit(string.Format("必须在英文小括号内声明要导出为csv对应Java类文件的Excel表格名，若要全部导出，请配置为{0}参数", AppValues.EXPORT_ALL_TO_EXTRA_FILE_PARAM_STRING));
+                    AppValues.UEFileRefPath = UERefPath;
                 }
+                continue;
             }
             else if (param.StartsWith(AppValues.EXPORT_GO_FLAG_PARAM_STRING, StringComparison.CurrentCultureIgnoreCase))
                 continue;
@@ -967,7 +663,8 @@ public class Program
             else if (param.StartsWith(AppValues.ALLOWED_NULL_NUMBER_PARAM_STRING, StringComparison.CurrentCultureIgnoreCase))
             {
                 AppValues.IsAllowedNullNumber = true;
-                Utils.LogWarning("警告：你选择了允许int、long、float字段中存在空值，建议为逻辑上不允许为空的数值型字段声明使用notEmpty检查规则");
+                if (AppValues.VerboseModeFlag)
+                    Utils.LogWarning("警告：你选择了允许int、long、float字段中存在空值，建议为逻辑上不允许为空的数值型字段声明使用notEmpty检查规则");
             }
             else if (param.StartsWith(AppValues.EXPORT_GROUP_PARAM_STRING, StringComparison.CurrentCultureIgnoreCase))
             {
@@ -1046,7 +743,7 @@ public class Program
             if (!string.IsNullOrEmpty(errorString))
                 Utils.LogErrorAndExit(errorString);
         }
-        else
+        else if (AppValues.VerboseModeFlag)
             Utils.LogWarning(string.Format("警告：找不到本工具所在路径下的{0}配置文件，请确定是否真的不需要自定义配置", AppValues.CONFIG_FILE_NAME));
 
         // 读取部分配置项并进行检查
@@ -1108,7 +805,9 @@ public class Program
             if (fileName.StartsWith(AppValues.EXCEL_TEMP_FILE_FILE_NAME_START_STRING))
                 continue;
 
-            Utils.Log(string.Format("解析表格\"{0}\"：", fileName), ConsoleColor.Green);
+            if (AppValues.VerboseModeFlag)
+                Utils.Log(string.Format("解析表格\"{0}\"：", fileName), ConsoleColor.Green);
+
             stopwatch.Reset();
             stopwatch.Start();
 
@@ -1179,27 +878,32 @@ public class Program
         bool isTableAllRight = true;
         if (AppValues.IsNeedCheck == true)
         {
-            Utils.Log("\n下面开始进行表格检查：");
+            if (AppValues.VerboseModeFlag)
+                Utils.Log("\n下面开始进行表格检查：");
 
             foreach (string tableName in AppValues.ExportTableNameAndPath.Keys)
             {
                 TableInfo tableInfo = AppValues.TableInfo[tableName];
                 string errorString = null;
-                Utils.Log(string.Format("检查表格\"{0}\"：", tableInfo.TableName), ConsoleColor.Green);
+                if (AppValues.VerboseModeFlag)
+                {
+                    Utils.Log(string.Format("检查表格\"{0}\"：", tableInfo.TableName), ConsoleColor.Green);
+                }
                 TableCheckHelper.CheckTable(tableInfo, out errorString);
                 if (errorString != null)
                 {
                     Utils.LogError(errorString);
                     isTableAllRight = false;
                 }
-                else
+                else if (AppValues.VerboseModeFlag)
                     Utils.Log("正确");
             }
         }
         if (isTableAllRight == true)
         {
             int tableIndex = -1;
-            Utils.Log("\n表格检查完毕，没有发现错误，开始导出为lua文件\n");
+            if (AppValues.VerboseModeFlag)
+                Utils.Log("\n表格检查完毕，没有发现错误，开始导出为lua文件\n");
             // 进行表格导出
             foreach (var item in AppValues.ExportTableNameAndFileName)
             {
@@ -1209,7 +913,12 @@ public class Program
 
                 TableInfo tableInfo = AppValues.TableInfo[tableName];
                 string errorString = null;
-                Utils.Log(string.Format("导出表格\"{0}\"：", tableInfo.TableName), ConsoleColor.Green);
+                
+                if (AppValues.VerboseModeFlag)
+                {
+                    Utils.Log(string.Format("导出表格\"{0}\"：", tableInfo.TableName), ConsoleColor.Green);
+                }
+
                 bool isNeedExportOriginalTable = true;
                 // 判断是否设置了特殊导出规则
                 if (tableInfo.TableConfig != null && tableInfo.TableConfig.ContainsKey(AppValues.CONFIG_NAME_EXPORT))
@@ -1253,29 +962,6 @@ public class Program
                     else
                         Utils.Log("额外导出为csv文件成功");
                 }
-                // 判断是否要额外导出为csv对应C#类文件
-                if (AppValues.ExportCsClassTableNames.Contains(tableName))
-                {
-                    TableExportToCsClassHelper.ExportTableToCsClass(tableInfo, out errorString);
-                    if (errorString != null)
-                        Utils.LogErrorAndExit(errorString);
-                    else
-                        Utils.Log("额外导出为csv对应C#类文件成功");
-                }
-                // 判断是否要额外导出为csv对应Java类文件
-                if (AppValues.ExportJavaClassTableNames.Contains(fileName))
-                {
-                    TableExportToJavaClassHelper.ExportTableToJavaClass(tableInfo, out errorString);
-                    if (errorString != null)
-                        Utils.LogErrorAndExit(errorString);
-                }
-                // 判断是否要额外导出为csv对应UESlua文件
-                if (AppValues.ExportUESluaTableNames.Contains(fileName))
-                {
-                    TableExportToUESluaClassHelper.ExportTableToUESluaClass(tableInfo, out errorString);
-                    if (errorString != null)
-                        Utils.LogErrorAndExit(errorString);
-                }
                 // 判断是否要额外导出为csv对应Go文件
                 if (AppValues.ExportGoTableNames.Contains(fileName))
                 {
@@ -1309,6 +995,14 @@ public class Program
 
                 Utils.Log("\n导出到数据库完毕\n");
             }
+
+            if (AppValues.ExportUERef)
+            {
+                string errorString = null;
+                UEFileReference.ExportUEFileRefrenceCSV(AppValues.TableInfo, out errorString);
+                if (errorString != null)
+                    Utils.LogErrorAndExit(errorString);
+            }
         }
         else
         {
@@ -1323,8 +1017,8 @@ public class Program
             TableExportToLuaHelper.ExportLangTableToLua(AppValues.LangData, out errorString);
             if (errorString != null)
                 Utils.LogErrorAndExit(errorString);
-            else
-                Utils.Log("导出lang.lua成功");
+            else if (AppValues.VerboseModeFlag)
+                Utils.Log("导出lang.lua成功", ConsoleColor.Green);
         }
 
 

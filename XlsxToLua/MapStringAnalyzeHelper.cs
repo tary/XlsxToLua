@@ -1,7 +1,7 @@
-﻿using System;
+﻿using LitJson;
+using System;
 using System.Collections.Generic;
 using System.Text;
-using LitJson;
 
 public class MapStringAnalyzeHelper
 {

@@ -647,10 +647,7 @@ public class TableExportToLuaHelper
         }
         else
         {
-            if (AppValues.IsPrintEmptyStringWhenLangNotMatching == true)
-                content.Append("\"\"");
-            else
-                content.Append("nil");
+            content.Append("\"\"");
         }
 
         return content.ToString();
@@ -668,10 +665,7 @@ public class TableExportToLuaHelper
         }
         else
         {
-            if (AppValues.IsPrintEmptyStringWhenLangNotMatching == true)
-                content.Append("\"\"");
-            else
-                content.Append("nil");
+            content.Append("\"\"");
         }
 
         return content.ToString();

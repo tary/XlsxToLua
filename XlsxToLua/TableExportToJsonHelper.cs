@@ -267,10 +267,7 @@ public class TableExportToJsonHelper
         }
         else
         {
-            if (AppValues.IsPrintEmptyStringWhenLangNotMatching == true)
-                content.Append("\"\"");
-            else
-                content.Append("null");
+            content.Append("\"\"");
         }
 
         return content.ToString();
