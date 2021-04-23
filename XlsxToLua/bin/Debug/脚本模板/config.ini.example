@@ -1,0 +1,18 @@
+#配置为temp 表示输出到临时目录
+
+#服务器代码输出目录
+UE_GO_EXPORT_PATH=D:\Workspace\GoServer\server\src\excel
+
+#服务器Json配置输出目录
+UE_JSON_EXPORT_PATH=D:\Workspace\GoServer\server\res\excel
+
+#表格文件路径
+EXCEL_PATH=D:\Workspace\DesignDocument\Table
+
+#语言表
+LANG_PATH=D:\Workspace\DesignDocument\Table\Demo\lang\lang.xlsx
+
+#客户端目录
+PROJECT_PATH=D:\Workspace\Client\PROJECT_NAME
+#引擎目录
+UE_HOME=D:\Workspace\UE4
