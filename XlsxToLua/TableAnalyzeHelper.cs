@@ -30,7 +30,7 @@ public class TableAnalyzeHelper
         DataType primaryKeyColumnType = _AnalyzeDataType(dt.Rows[AppValues.DATA_FIELD_DATA_TYPE_INDEX][0].ToString().Trim());
         if (!(primaryKeyColumnType == DataType.Int || primaryKeyColumnType == DataType.Long || primaryKeyColumnType == DataType.String))
         {
-            errorString = _GetTableAnalyzeErrorString(tableName, 0) + "主键列的类型只能为int、long或string";
+            errorString = _GetTableAnalyzeErrorString(tableName, dt.TableName, 0) + "主键列的类型只能为int、long或string";
             return null;
         }
         else
@@ -39,13 +39,13 @@ public class TableAnalyzeHelper
             FieldInfo primaryKeyField = _AnalyzeOneField(dt, tableInfo, 0, null, out curColumnIndex, out errorString);
             if (errorString != null)
             {
-                errorString = _GetTableAnalyzeErrorString(tableName, 0) + "主键列解析错误\n" + errorString;
+                errorString = _GetTableAnalyzeErrorString(tableName, dt.TableName, 0) + "主键列解析错误\n" + errorString;
                 return null;
             }
             // 主键列字段名不允许为空
             else if (primaryKeyField.IsIgnoreClientExport == true)
             {
-                errorString = _GetTableAnalyzeErrorString(tableName, 0) + "主键列必须指定字段名\n" + errorString;
+                errorString = _GetTableAnalyzeErrorString(tableName, dt.TableName, 0) + "主键列必须指定字段名\n" + errorString;
                 return null;
             }
             else
@@ -57,7 +57,7 @@ public class TableAnalyzeHelper
                 TableCheckHelper.CheckUnique(primaryKeyField, uniqueCheckRule, out errorString);
                 if (errorString != null)
                 {
-                    errorString = _GetTableAnalyzeErrorString(tableName, 0) + "主键列存在重复错误\n" + errorString;
+                    errorString = _GetTableAnalyzeErrorString(tableName, dt.TableName, 0) + "主键列存在重复错误\n" + errorString;
                     return null;
                 }
 
@@ -74,7 +74,7 @@ public class TableAnalyzeHelper
                     }
                     if (!string.IsNullOrEmpty(errorStringBuilder.ToString()))
                     {
-                        errorString = _GetTableAnalyzeErrorString(tableName, 0) + "string型主键列存在非法数据\n" + errorStringBuilder.ToString();
+                        errorString = _GetTableAnalyzeErrorString(tableName, dt.TableName, 0) + "string型主键列存在非法数据\n" + errorStringBuilder.ToString();
                         return null;
                     }
                 }
@@ -88,7 +88,7 @@ public class TableAnalyzeHelper
                     TableCheckHelper.CheckNotEmpty(primaryKeyField, notEmptyCheckRule, out errorString);
                     if (errorString != null)
                     {
-                        errorString = _GetTableAnalyzeErrorString(tableName, 0) + "主键列存在非空错误\n" + errorString;
+                        errorString = _GetTableAnalyzeErrorString(tableName, dt.TableName, 0) + "主键列存在非空错误\n" + errorString;
                         return null;
                     }
                 }
@@ -108,7 +108,7 @@ public class TableAnalyzeHelper
             FieldInfo oneField = _AnalyzeOneField(dt, tableInfo, nextColumnIndex, null, out curColumnIndex, out errorString);
             if (errorString != null)
             {
-                errorString = _GetTableAnalyzeErrorString(tableName, nextColumnIndex) + errorString;
+                errorString = _GetTableAnalyzeErrorString(tableName, dt.TableName, nextColumnIndex) + errorString;
                 return null;
             }
             else
@@ -119,7 +119,7 @@ public class TableAnalyzeHelper
                     // 检查字段名是否重复
                     if (fieldNames.ContainsKey(oneField.FieldName))
                     {
-                        errorString = _GetTableAnalyzeErrorString(tableName, nextColumnIndex) + string.Format("表格中存在字段名同为{0}的字段，分别位于第{1}列和第{2}列", oneField.FieldName, Utils.GetExcelColumnName(fieldNames[oneField.FieldName] + 1), Utils.GetExcelColumnName(oneField.ColumnSeq + 1));
+                        errorString = _GetTableAnalyzeErrorString(tableName, dt.TableName, nextColumnIndex) + string.Format("表格中存在字段名同为{0}的字段，分别位于第{1}列和第{2}列", oneField.FieldName, Utils.GetExcelColumnName(fieldNames[oneField.FieldName] + 1), Utils.GetExcelColumnName(oneField.ColumnSeq + 1));
                         return null;
                     }
                     else
@@ -2080,9 +2080,9 @@ public class TableAnalyzeHelper
     /// <summary>
     /// 当表格存在错误无法继续时，输出内容前统一加上表格名和列名
     /// </summary>
-    private static string _GetTableAnalyzeErrorString(string tableName, int columnIndex)
+    private static string _GetTableAnalyzeErrorString(string tableName, string sheetName, int columnIndex)
     {
-        return string.Format("表格{0}中列号为{1}的字段存在以下严重错误，导致无法继续，请修正错误后重试\n", tableName, Utils.GetExcelColumnName(columnIndex + 1));
+        return string.Format("表格: {0}.xlxs 页: {1} 列号: {2} 的字段存在以下严重错误，导致无法继续，请修正错误后重试\n", tableName, sheetName, Utils.GetExcelColumnName(columnIndex + 1));
     }
 
     /// <summary>
