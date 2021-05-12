@@ -1344,6 +1344,29 @@ public class TableAnalyzeHelper
         }
     }
 
+    private static string _getStringInnerStr(string str, string startFlag, string endFlag)
+    {
+        do
+        {
+            if (!str.StartsWith(startFlag))
+            {
+                break;
+            }
+            int endPos = str.LastIndexOf(endFlag);
+            if (endPos <= 0)
+            {
+                break;
+            }
+            string itemTyString = str.Substring(1, endPos - 1).Trim();
+            if (string.IsNullOrEmpty(itemTyString))
+            {
+                break;
+            }
+            return itemTyString;
+        } while (false);
+        return null;
+    }
+
     private static JsonDetail _getJsonSubType(string defineString)
     {
         if (string.IsNullOrEmpty(defineString) || defineString.Length < 4)
@@ -1356,19 +1379,9 @@ public class TableAnalyzeHelper
             return null;
         }
 
-        if (configString.StartsWith("["))
-        {
-            int endPos = configString.LastIndexOf(']');
-            if (endPos <= 0)
-            {
-                return null;
-            }
-            string itemTyString = configString.Substring(1, endPos - 1).Trim();
-            if (string.IsNullOrEmpty(itemTyString))
-            {
-                return null;
-            }
-            
+        string itemTyString = _getStringInnerStr(configString, "[", "]");
+        if (itemTyString != null)
+        {                        
             DataType innerValueType = _AnalyzeDataType(itemTyString);
             if (innerValueType != DataType.Int && innerValueType != DataType.String && innerValueType != DataType.Lang)
                 return null;
@@ -1444,7 +1457,45 @@ public class TableAnalyzeHelper
                     fieldInfo.JsonString.Add(inputData);
                     try
                     {
+                        
+                        if(inputData.Length > 2 && !inputData.Contains("\""))
+                        {
+                            if (fieldInfo.IsJsonArrayOfType(DataType.String))
+                            {
+                                string jsonInner = _getStringInnerStr(inputData, "[", "]");
+                                string[] innerStrList = jsonInner.Split(',');
+                                List<string> trimedStrList = new List<string>();
+                                foreach (string element in innerStrList)
+                                {
+                                    trimedStrList.Add(element.Trim());
+                                }
+                                jsonInner = String.Join("\",\"", trimedStrList);
+
+                                inputData = "[\"" + jsonInner + "\"]";
+                            }
+                            else if (fieldInfo.IsJsonDict())
+                            {
+                                string jsonInner = _getStringInnerStr(inputData, "{", "}");
+
+                                string[] innerStrList = jsonInner.Split(',');
+                                List<string> trimedStrList = new List<string>();
+                                foreach (string element in innerStrList)
+                                {
+                                    string[] pairList = element.Split(':');
+                                    if (pairList.Length != 2)
+                                        continue;
+
+                                    //"key": value
+                                    string pair = "\"" + pairList[0].Trim() + "\":" + pairList[1].Trim();
+                                    trimedStrList.Add(pair);
+                                }
+                                jsonInner = String.Join(",", trimedStrList);
+
+                                inputData = "{" + jsonInner + "}";
+                            }                                
+                        }
                         JsonData jsonData = JsonMapper.ToObject(inputData);
+
                         fieldInfo.Data.Add(jsonData);
 
                         if (null != fieldInfo.JsonDetailType)

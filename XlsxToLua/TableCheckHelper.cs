@@ -1,4 +1,5 @@
-﻿using System;
+﻿using LitJson;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -1913,6 +1914,44 @@ public class TableCheckHelper
         }
     }
 
+
+    private static bool CheckOneFile(string inputFileName, ref List<int> InIllegalFileNames, ref Dictionary<int, string> inexistFileInfo, int LineNum, string PathStartFlag, string fileExtent)
+    {
+        //Blueprint'/Game/Demo/RoleData/m3001.m3001'           
+        int PathStartIdx = inputFileName.IndexOf(PathStartFlag);
+        if (PathStartIdx == -1)
+        {
+            InIllegalFileNames.Add(LineNum);
+            return false;
+        }
+        PathStartIdx += PathStartFlag.Length;
+
+        int PathEndDirIdx = inputFileName.LastIndexOf('/');
+        if (PathEndDirIdx < PathStartIdx)
+        {
+            PathEndDirIdx = PathStartIdx;
+        }
+        else
+        {
+            PathEndDirIdx++;
+        }
+
+        int PathEndIdx = inputFileName.LastIndexOf('.');
+        if (PathEndIdx <= PathEndDirIdx)
+        {
+            InIllegalFileNames.Add(LineNum);
+            return false;
+        }
+
+        string fileName = inputFileName.Substring(PathStartIdx, PathEndIdx - PathStartIdx) + fileExtent;
+
+        if (!File.Exists(Path.Combine(AppValues.ClientPath, fileName)))
+        {
+            inexistFileInfo.Add(LineNum, inputFileName);
+        }
+        return true;
+    }
+
     /// <summary>
     /// 用于检查string型的文件路径对应的文件是否存在
     /// </summary>
@@ -1930,10 +1969,10 @@ public class TableCheckHelper
             errorString = string.Format("文件存在性检查定义错误：声明的客户端目录{0}不存在，请检查定义的路径是否正确\n", AppValues.ClientPath);
             return false;
         }
-
-        if (fieldInfo.DataType != DataType.String)
+        bool isStringArray = fieldInfo.IsJsonArrayOfType(DataType.String);
+        if (fieldInfo.DataType != DataType.String && !isStringArray)
         {
-            errorString = string.Format("文件存在性检查定义只能用于string型的字段，而该字段为{0}型\n", fieldInfo.DataType);
+            errorString = string.Format("文件存在性检查定义只能用于string或json[string]型的字段，而该字段为{0}型\n", fieldInfo.DataType);
             return false;
         }
 
@@ -1954,48 +1993,38 @@ public class TableCheckHelper
 
         const string PathStartFlag = "/Game/";
 
-        for (int i = 0; i < fieldInfo.Data.Count; ++i)
+       
+
+        for (int row = 0; row < fieldInfo.Data.Count; ++row)
         {
             // 忽略无效集合元素下属子类型的空值
-            if (fieldInfo.Data[i] == null)
+            if (fieldInfo.Data[row] == null)
                 continue;
 
             // 文件名中不允许含有\或/，即不支持文件在填写路径的非同级目录
-            string inputFileName = fieldInfo.Data[i].ToString().Trim();
-            if (string.IsNullOrEmpty(inputFileName))
-                continue;
+            
 
-            //Blueprint'/Game/Demo/RoleData/m3001.m3001'           
-            int PathStartIdx = inputFileName.IndexOf(PathStartFlag);
-            if (PathStartIdx == -1)
+            if (isStringArray)
             {
-                illegalFileNames.Add(i);
-                continue;
-            }
-            PathStartIdx += PathStartFlag.Length;
-
-            int PathEndDirIdx = inputFileName.LastIndexOf('/');
-            if (PathEndDirIdx < PathStartIdx)
-            {
-                PathEndDirIdx = PathStartIdx;
+                JsonData jsonData = fieldInfo.Data[row] as JsonData;
+                if (jsonData.IsArray == true)
+                {
+                    int childCount = jsonData.Count;
+                    for (int idx = 0; idx < childCount; ++idx)
+                    {
+                        string inputFileName = jsonData[idx].ToString().Trim();
+                        if (string.IsNullOrEmpty(inputFileName))
+                            continue;
+                        CheckOneFile(inputFileName, ref illegalFileNames, ref inexistFileInfo, row, PathStartFlag, fileExtent);
+                    }
+                }
             }
             else
             {
-                PathEndDirIdx++;
-            }
-
-            int PathEndIdx = inputFileName.LastIndexOf('.');
-            if (PathEndIdx <= PathEndDirIdx)
-            {
-                illegalFileNames.Add(i);
-                continue;
-            }
-
-            string fileName = inputFileName.Substring(PathStartIdx, PathEndIdx - PathStartIdx) + fileExtent;
-
-            if (!File.Exists(Path.Combine(AppValues.ClientPath, fileName)))
-            {
-                inexistFileInfo.Add(i, inputFileName);
+                string inputFileName = fieldInfo.Data[row].ToString().Trim();
+                if (string.IsNullOrEmpty(inputFileName))
+                    continue;
+                CheckOneFile(inputFileName, ref illegalFileNames, ref inexistFileInfo, row, PathStartFlag, fileExtent);
             }
         }
 

@@ -102,6 +102,11 @@ public class JsonDetail
     public DataType ContentType { get; }
     public DataType KeyType { get; }
     public DataType ValueType { get; }
+
+    public bool IsArrayOfType(DataType valType)
+    {
+        return ContentType == DataType.Array && ValueType == valType;
+    }
 }
 
     /// <summary>
@@ -152,6 +157,19 @@ public class JsonDetail
     // 是否忽略进行lua、csv、json等客户端方式导出（未填写字段名但填写了数据库导出信息的字段，仅进行数据库导出）
     public bool IsIgnoreClientExport { get; set; }
     public JsonDetail JsonDetailType { get; set; }
+
+    public bool IsJsonArrayOfType(DataType valType)
+    {
+        return (DataType == DataType.Json) && 
+            (JsonDetailType != null) && 
+            JsonDetailType.IsArrayOfType(valType);
+    }
+    public bool IsJsonDict()
+    {
+        return (DataType == DataType.Json) &&
+            (JsonDetailType != null) &&
+            JsonDetailType.ContentType == DataType.Dict;
+    }
 
     public FieldInfo()
     {
