@@ -883,6 +883,8 @@ public class Program
 
             foreach (string tableName in AppValues.ExportTableNameAndPath.Keys)
             {
+                if (!AppValues.TableInfo.ContainsKey(tableName))
+                    continue;
                 TableInfo tableInfo = AppValues.TableInfo[tableName];
                 string errorString = null;
                 if (AppValues.VerboseModeFlag)
