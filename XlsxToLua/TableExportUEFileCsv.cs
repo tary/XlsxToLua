@@ -1,4 +1,5 @@
-﻿using System;
+﻿using LitJson;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -20,20 +21,52 @@ public class UEFileReference
 
             foreach (FieldInfo field in allField)
             {
-                if (field.Data.Count == 0 || field.CheckRule == null || field.DataType != DataType.String)
+                if (field.Data.Count == 0 || field.CheckRule == null || 
+                    (field.DataType != DataType.String && !field.IsJsonArrayOfType(DataType.String) && !field.IsJsonDictOfType(DataType.String)))
+                    continue;
+
+                bool isStringArray = field.IsJsonArrayOfType(DataType.String);
+                bool isStringMap = field.IsJsonDictOfType(DataType.String);
+                if (field.DataType != DataType.String && !isStringArray && !isStringMap)
                     continue;
 
                 if (field.CheckRule.IndexOf(AppValues.CheckRuleUEFileFlag, StringComparison.CurrentCultureIgnoreCase) == -1)
                     continue;
 
                 List<string> refOfField = new List<string>();
-                foreach (string value in field.Data)
+
+                if (isStringArray || isStringMap)
                 {
-                    string path = value.Trim();
-                    if (path.Length == 0 || refOfField.Contains(path))
-                        continue;
-                    refOfField.Add(path);
+                    foreach (object obj in field.Data)
+                    {
+                        JsonData jsonData = obj as JsonData;
+                        if (jsonData == null)
+                            continue;
+
+                        if (jsonData.IsArray || jsonData.IsObject)
+                        {
+                            for (int idx = 0; idx < jsonData.Count; ++idx)
+                            {
+                                string inputFileName = jsonData[idx].ToString().Trim();
+                                if (string.IsNullOrEmpty(inputFileName))
+                                    continue;
+                                if (inputFileName.Length == 0 || refOfField.Contains(inputFileName))
+                                    continue;
+                                refOfField.Add(inputFileName);
+                            }
+                        }
+                    }
                 }
+                else
+                {
+                    foreach (string value in field.Data)
+                    {
+                        string path = value.Trim();
+                        if (path.Length == 0 || refOfField.Contains(path))
+                            continue;
+                        refOfField.Add(path);
+                    }
+                }                
 
                 if (refOfField.Count == 0)
                     continue;

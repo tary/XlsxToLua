@@ -1485,8 +1485,17 @@ public class TableAnalyzeHelper
                                     if (pairList.Length != 2)
                                         continue;
 
-                                    //"key": value
-                                    string pair = "\"" + pairList[0].Trim() + "\":" + pairList[1].Trim();
+                                    string pair = null;
+                                    if (fieldInfo.IsJsonDictOfType(DataType.String))
+                                    {
+                                        //"key": "value"
+                                        pair = "\"" + pairList[0].Trim() + "\":\"" + pairList[1].Trim() + "\"";
+                                    }
+                                    else
+                                    {
+                                        pair = "\"" + pairList[0].Trim() + "\":" + pairList[1].Trim();
+                                    }
+
                                     trimedStrList.Add(pair);
                                 }
                                 jsonInner = String.Join(",", trimedStrList);

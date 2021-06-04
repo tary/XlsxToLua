@@ -170,6 +170,12 @@ public class JsonDetail
             (JsonDetailType != null) &&
             JsonDetailType.ContentType == DataType.Dict;
     }
+    public bool IsJsonDictOfType(DataType valType)
+    {
+        return (DataType == DataType.Json) &&
+            (JsonDetailType != null) &&
+            JsonDetailType.ValueType == valType;
+    }
 
     public FieldInfo()
     {

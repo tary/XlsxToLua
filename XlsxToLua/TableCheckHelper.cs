@@ -1970,7 +1970,8 @@ public class TableCheckHelper
             return false;
         }
         bool isStringArray = fieldInfo.IsJsonArrayOfType(DataType.String);
-        if (fieldInfo.DataType != DataType.String && !isStringArray)
+        bool isStringMap = fieldInfo.IsJsonDictOfType(DataType.String);
+        if (fieldInfo.DataType != DataType.String && !isStringArray && !isStringMap)
         {
             errorString = string.Format("文件存在性检查定义只能用于string或json[string]型的字段，而该字段为{0}型\n", fieldInfo.DataType);
             return false;
@@ -2008,6 +2009,21 @@ public class TableCheckHelper
             {
                 JsonData jsonData = fieldInfo.Data[row] as JsonData;
                 if (jsonData.IsArray == true)
+                {
+                    int childCount = jsonData.Count;
+                    for (int idx = 0; idx < childCount; ++idx)
+                    {
+                        string inputFileName = jsonData[idx].ToString().Trim();
+                        if (string.IsNullOrEmpty(inputFileName))
+                            continue;
+                        CheckOneFile(inputFileName, ref illegalFileNames, ref inexistFileInfo, row, PathStartFlag, fileExtent);
+                    }
+                }
+            }
+            else if(isStringMap)
+            {
+                JsonData jsonData = fieldInfo.Data[row] as JsonData;
+                if (jsonData.IsObject == true)
                 {
                     int childCount = jsonData.Count;
                     for (int idx = 0; idx < childCount; ++idx)
