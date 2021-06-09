@@ -72,7 +72,6 @@ public class UEFileReference
                     continue;
 
                 string refDesc = table.TableName + "." + field.FieldName;
-                refOfTable.Add(refDesc, refOfField);
 
                 foreach(string path in refOfField)
                 {
@@ -98,8 +97,12 @@ public class UEFileReference
         {
             int startIdx = path.IndexOf('\'');
             int endIdx = path.LastIndexOf('\'');
-            if (startIdx >= endIdx)
+
+            if (startIdx == -1 && endIdx == -1 && path.EndsWith("_C"))
+                endIdx = path.Length - 2;
+            else if (startIdx >= endIdx)
                 continue;
+
 
             string depPath = path.Substring(startIdx +1, endIdx - startIdx-1);
 

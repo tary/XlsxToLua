@@ -1913,18 +1913,14 @@ public class TableCheckHelper
             return true;
         }
     }
-
-
-    private static bool CheckOneFile(string inputFileName, ref List<int> InIllegalFileNames, ref Dictionary<int, string> inexistFileInfo, int LineNum, string PathStartFlag, string fileExtent)
+    private static string _parseUEFilePath(string inputFileName, string PathStartFlag)
     {
         //Blueprint'/Game/Demo/RoleData/m3001.m3001'           
         int PathStartIdx = inputFileName.IndexOf(PathStartFlag);
         if (PathStartIdx == -1)
         {
-            InIllegalFileNames.Add(LineNum);
-            return false;
+            return null;
         }
-        PathStartIdx += PathStartFlag.Length;
 
         int PathEndDirIdx = inputFileName.LastIndexOf('/');
         if (PathEndDirIdx < PathStartIdx)
@@ -1936,22 +1932,21 @@ public class TableCheckHelper
             PathEndDirIdx++;
         }
 
-        int PathEndIdx = inputFileName.LastIndexOf('.');
+        int PathEndIdx = inputFileName.LastIndexOf('\'');
         if (PathEndIdx <= PathEndDirIdx)
         {
-            InIllegalFileNames.Add(LineNum);
-            return false;
+            return null;
         }
 
-        string fileName = inputFileName.Substring(PathStartIdx, PathEndIdx - PathStartIdx) + fileExtent;
-
-        if (!File.Exists(Path.Combine(AppValues.ClientPath, fileName)))
-        {
-            inexistFileInfo.Add(LineNum, inputFileName);
-        }
-        return true;
+        return inputFileName.Substring(PathStartIdx, PathEndIdx - PathStartIdx);
     }
 
+    private static string _getUEPostfix(string path)
+    {
+        if (path.StartsWith("World"))
+            return ".umap";
+        return ".uasset";
+    }
     /// <summary>
     /// 用于检查string型的文件路径对应的文件是否存在
     /// </summary>
@@ -1969,6 +1964,9 @@ public class TableCheckHelper
             errorString = string.Format("文件存在性检查定义错误：声明的客户端目录{0}不存在，请检查定义的路径是否正确\n", AppValues.ClientPath);
             return false;
         }
+
+        bool convertToCls = fieldInfo.CheckRule.IndexOf("class", StringComparison.OrdinalIgnoreCase) != -1;
+
         bool isStringArray = fieldInfo.IsJsonArrayOfType(DataType.String);
         bool isStringMap = fieldInfo.IsJsonDictOfType(DataType.String);
         if (fieldInfo.DataType != DataType.String && !isStringArray && !isStringMap)
@@ -1977,16 +1975,6 @@ public class TableCheckHelper
             return false;
         }
 
-        const string commonFileExtent = "uasset";
-        string fileExtent = commonFileExtent;
-        int extentStart = checkRule.CheckRuleString.IndexOf(':');
-        if (extentStart != -1)
-        {
-            fileExtent = checkRule.CheckRuleString.Substring(extentStart+1);
-        }
-
-        fileExtent = "." + fileExtent;
-
         // 存储不存在的文件信息（key：行号， value：输入的文件名）
         Dictionary<int, string> inexistFileInfo = new Dictionary<int, string>();
         //路径配置错误
@@ -1994,7 +1982,34 @@ public class TableCheckHelper
 
         const string PathStartFlag = "/Game/";
 
-       
+        Func<string, int, string> checkAndReplace = (inputPath, rowIdx) =>
+        {
+            string refPath = _parseUEFilePath(inputPath, PathStartFlag);
+            if (refPath == null)
+            {
+                illegalFileNames.Add(rowIdx);
+                return null;
+            }
+
+            int PathEndIdx = refPath.LastIndexOf('.');
+            if (PathEndIdx == -1)
+            {
+                inexistFileInfo.Add(rowIdx, inputPath);
+                return null;
+            }
+
+            string fileName = refPath.Substring(PathStartFlag.Length, PathEndIdx - PathStartFlag.Length) + _getUEPostfix(inputPath);
+
+            if (!File.Exists(Path.Combine(AppValues.ClientPath, fileName)))
+            {
+                inexistFileInfo.Add(rowIdx, inputPath);
+            }
+            else if (convertToCls)
+            {
+                return refPath;
+            }
+            return null;
+        };
 
         for (int row = 0; row < fieldInfo.Data.Count; ++row)
         {
@@ -2016,7 +2031,12 @@ public class TableCheckHelper
                         string inputFileName = jsonData[idx].ToString().Trim();
                         if (string.IsNullOrEmpty(inputFileName))
                             continue;
-                        CheckOneFile(inputFileName, ref illegalFileNames, ref inexistFileInfo, row, PathStartFlag, fileExtent);
+
+                        string refPath = checkAndReplace(inputFileName, row);
+                        if (convertToCls && refPath != null)
+                        {
+                            jsonData[idx] = refPath + "_C";
+                        }
                     }
                 }
             }
@@ -2031,7 +2051,11 @@ public class TableCheckHelper
                         string inputFileName = jsonData[idx].ToString().Trim();
                         if (string.IsNullOrEmpty(inputFileName))
                             continue;
-                        CheckOneFile(inputFileName, ref illegalFileNames, ref inexistFileInfo, row, PathStartFlag, fileExtent);
+                        string refPath = checkAndReplace(inputFileName, row);
+                        if (convertToCls && refPath != null)
+                        {
+                            jsonData[idx] = refPath + "_C";
+                        }
                     }
                 }
             }
@@ -2040,7 +2064,11 @@ public class TableCheckHelper
                 string inputFileName = fieldInfo.Data[row].ToString().Trim();
                 if (string.IsNullOrEmpty(inputFileName))
                     continue;
-                CheckOneFile(inputFileName, ref illegalFileNames, ref inexistFileInfo, row, PathStartFlag, fileExtent);
+                string refPath = checkAndReplace(inputFileName, row);
+                if (convertToCls && refPath != null)
+                {
+                    fieldInfo.Data[row] = refPath + "_C";
+                }
             }
         }
 
