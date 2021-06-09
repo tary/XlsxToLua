@@ -5,3 +5,4 @@ XlsxToLua/obj/
 *.pdb
 *.exe
 XlsxToLuaGUI/obj/
+*.lua
