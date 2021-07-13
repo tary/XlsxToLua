@@ -94,9 +94,12 @@ public class XlsxReader
                 da.Fill(ds, AppValues.EXCEL_CONFIG_SHEET_NAME);
             }
         }
-        catch
+        catch (Exception e)
         {
-            errorString = "错误：连接Excel失败，你可能尚未安装Office数据连接组件: http://www.microsoft.com/en-US/download/details.aspx?id=23734 \n";
+            if (e != null)
+                errorString = e.ToString();
+            else
+                errorString = "错误：连接Excel失败，你可能尚未安装Office数据连接组件: http://www.microsoft.com/en-US/download/details.aspx?id=23734 \n";
             return null;
         }
         finally

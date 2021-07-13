@@ -1463,6 +1463,13 @@ public class TableAnalyzeHelper
                             if (fieldInfo.IsJsonArrayOfType(DataType.String))
                             {
                                 string jsonInner = _getStringInnerStr(inputData, "[", "]");
+                                if (jsonInner == null)
+                                {
+                                    errorStringBuilder.AppendFormat(
+                                        "第{0}行所填json字符串（{1}）非法，原因为：解析错误\n", 
+                                        row + AppValues.DATA_FIELD_DATA_START_INDEX + 1, inputData);
+                                    continue;
+                                }
                                 string[] innerStrList = jsonInner.Split(',');
                                 List<string> trimedStrList = new List<string>();
                                 foreach (string element in innerStrList)
